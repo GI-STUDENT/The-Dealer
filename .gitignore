@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.npm/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Flutter (added when the apps are built)
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/build/
+**/android/key.properties
+**/*.keystore
+**/*.jks
+
+# Local database volumes
+.docker-data/
+
+# Local account store (password hashes - never commit)
+data/

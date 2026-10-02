@@ -1,0 +1,1014 @@
+# Build a Full Product Specification for a Pakistan-First Field Agent Marketplace
+
+I have an app idea and I want you to act as a senior product architect, marketplace designer, UX designer, backend architect, security engineer, and business-system analyst.
+
+Do NOT simplify the idea into a normal delivery app.
+
+The core concept is:
+
+> A buyer can hire a verified local "Field Agent" who physically visits an online seller on the buyer's behalf, verifies the seller and product, inspects and tests the product, communicates with the buyer through WhatsApp/video call, negotiates if authorized, completes the purchase process, packages the item, and hands it to a courier or personally delivers it when practical.
+
+The purpose is to make remote online purchases safer, especially when the buyer and seller are in different cities.
+
+The platform launches in Pakistan first but should be architected so it can expand internationally later.
+
+---
+
+# 1. CORE PROBLEM
+
+Online buyers frequently find products on platforms such as Facebook Marketplace, OLX, WhatsApp, local marketplaces, classified websites, social media, and other seller platforms.
+
+The buyer may be interested in a product located in another city but cannot physically visit the seller.
+
+The risks include:
+
+- Fake sellers
+- Fake locations
+- Stolen or counterfeit products
+- Product condition being different from photographs
+- Defective products
+- Missing accessories
+- Hidden damage
+- Seller refusing to demonstrate the product
+- Bait-and-switch
+- Incorrect specifications
+- Fraudulent payment requests
+- Seller disappearing after payment
+- Buyer having no trusted person nearby to inspect the item
+
+The Field Agent marketplace solves this by allowing the buyer to hire a verified human in the seller's city.
+
+---
+
+# 2. THREE PRIMARY USERS
+
+Design the platform around three main roles.
+
+## Buyer
+
+The person purchasing the product.
+
+The buyer can:
+
+- Create a purchase/inspection request
+- Enter seller information
+- Enter seller location
+- Enter product information
+- Upload listing screenshots
+- Upload seller photos
+- Set the maximum purchase price
+- Describe exactly what needs to be checked
+- Set inspection requirements
+- Create a bid/payment for a Field Agent
+- View available Field Agents
+- Review Field Agent profiles
+- Choose a Field Agent
+- Communicate with the Field Agent
+- Join a WhatsApp/video call during inspection
+- Give the Field Agent permission to negotiate
+- Approve or reject the product
+- Approve the purchase
+- Track the transaction
+- Track courier delivery
+- Open a dispute if something goes wrong
+- Rate the Field Agent
+
+---
+
+# 3. FIELD AGENT
+
+Call the local worker a:
+
+**Field Agent**
+
+Do not call them merely a delivery driver.
+
+Their primary role is to act as the buyer's physical representative.
+
+A Field Agent should be able to:
+
+1. Receive available buyer requests
+2. See the general task requirements
+3. See the seller's city/location
+4. See the proposed Field Agent payment/bid
+5. Accept a task
+6. Navigate to the seller
+7. Verify the seller's identity
+8. Verify that the seller is actually located at the stated location
+9. Confirm that the seller has possession of the product
+10. Physically inspect the product
+11. Take photographs
+12. Record videos
+13. Test the product
+14. Compare the physical product with the online listing
+15. Check serial numbers/IMEI/model numbers where applicable
+16. Check accessories and included components
+17. Identify visible damage
+18. Report discrepancies
+19. Video call the buyer through WhatsApp when requested
+20. Show the buyer the product live
+21. Allow the buyer to ask questions
+22. Negotiate with the seller when the buyer has authorized negotiation
+23. Report the negotiated price
+24. Obtain buyer approval before final purchase
+25. Complete the purchase process
+26. Collect the product
+27. Package the product appropriately
+28. Photograph/video the packaged item
+29. Hand the package to a courier
+30. Personally deliver it to the buyer when the distance/rules allow it
+31. Upload proof of handover
+32. Complete the job
+33. Receive their share of the transaction commission
+34. Receive their inspection/task payment
+
+The Field Agent must never secretly alter the buyer's instructions.
+
+---
+
+# 4. SELLER
+
+The seller may not necessarily be a registered user of this platform.
+
+The seller could originally come from:
+
+- Facebook Marketplace
+- OLX
+- WhatsApp
+- Instagram
+- Another marketplace
+- A website
+- A physical shop
+- A private seller
+- Any other selling platform
+
+Therefore, the system must support a transaction where the Field Agent is visiting an external seller.
+
+The Field Agent should record:
+
+- Seller name
+- Seller phone number where appropriate
+- Seller location
+- Seller identity verification status
+- Evidence of possession
+- Product details
+- Product condition
+- Relevant serial/IMEI/VIN/model information
+- Photos/videos
+- Seller's stated claims
+- Any discrepancies
+
+The platform should clearly distinguish between:
+
+**Seller information provided by buyer**
+
+and
+
+**Seller information independently verified by Field Agent.**
+
+---
+
+# 5. PURCHASE REQUEST
+
+A buyer creates a request.
+
+Example:
+
+Product:
+Used iPhone 15 Pro
+
+Seller:
+External Facebook Marketplace seller
+
+Seller city:
+Lahore
+
+Seller location:
+Specific address/shared location
+
+Listing price:
+Rs. 150,000
+
+Maximum authorized purchase price:
+Rs. 145,000
+
+Inspection requirements:
+
+- Check IMEI
+- Check battery health
+- Check cameras
+- Check Face ID
+- Check display
+- Check speakers
+- Check microphone
+- Check charging
+- Check physical damage
+- Check whether parts were replaced
+- Compare with listing photos
+- Verify accessories
+
+Buyer can upload the original listing screenshots/photos.
+
+The system should preserve the original listing evidence so the Field Agent can compare the physical product against what was advertised.
+
+---
+
+# 6. FIELD AGENT BIDDING / HIRING
+
+The buyer chooses the Field Agent.
+
+The buyer can publish a task/request.
+
+Field Agents near the seller's location can see eligible requests.
+
+Depending on the marketplace design, Field Agents can either:
+
+- accept the buyer's offered task payment, or
+- submit their own bid.
+
+The system must support a clear bidding/acceptance workflow.
+
+Once a Field Agent accepts the task, the task payment should be secured according to the platform's payment rules.
+
+IMPORTANT:
+
+The Field Agent's task/inspection payment is separate from the 10% transaction commission.
+
+---
+
+# 7. INSPECTION PAYMENT
+
+The buyer must pay the Field Agent for undertaking the job.
+
+This payment exists even if the purchase fails.
+
+Example:
+
+Buyer creates a request.
+
+Field Agent accepts.
+
+Buyer pays the Field Agent task fee.
+
+Field Agent visits seller.
+
+Field Agent discovers that:
+
+- product is fake,
+- product is damaged,
+- seller lied,
+- seller refuses inspection,
+- seller doesn't have the product,
+- price is unacceptable,
+- product doesn't match listing,
+- buyer rejects the product.
+
+The purchase is cancelled.
+
+The buyer still pays the agreed Field Agent task/inspection fee because the Field Agent performed the physical service.
+
+The 10% transaction commission is NOT charged because the purchase did not close.
+
+---
+
+# 8. 10% TRANSACTION COMMISSION
+
+The platform charges:
+
+**10% of the final completed purchase value**
+
+ONLY when the transaction successfully closes.
+
+Example:
+
+Product final purchase price:
+
+Rs. 100,000
+
+Transaction commission:
+
+10% = Rs. 10,000
+
+This Rs. 10,000 is split:
+
+- 50% = Rs. 5,000 to the Field Agent
+- 50% = Rs. 5,000 to the platform
+
+Therefore:
+
+Field Agent receives:
+
+Task/inspection payment + Rs. 5,000 transaction commission
+
+Platform receives:
+
+Rs. 5,000 transaction commission
+
+If the deal is cancelled:
+
+Transaction commission = Rs. 0
+
+The Field Agent still receives the agreed inspection/task payment.
+
+The system must make this distinction extremely clear in the UI.
+
+---
+
+# 9. PAYMENT ESCROW / PROTECTED TRANSACTION
+
+The buyer's purchase money should be protected by the platform's transaction system.
+
+Do not simply send the purchase money directly to the seller before verification.
+
+Recommended conceptual flow:
+
+Buyer funds protected transaction.
+
+↓
+
+Field Agent visits seller.
+
+↓
+
+Field Agent verifies and inspects product.
+
+↓
+
+Field Agent communicates findings to buyer.
+
+↓
+
+Buyer approves product.
+
+↓
+
+Buyer authorizes purchase.
+
+↓
+
+Purchase funds are released according to the transaction rules.
+
+↓
+
+Field Agent obtains/collects product.
+
+↓
+
+Product is packaged.
+
+↓
+
+Product is handed to courier.
+
+↓
+
+Courier tracking begins.
+
+The exact legal/payment implementation must be designed according to Pakistan's applicable financial, marketplace, escrow, consumer-protection, and payment regulations.
+
+Do not falsely describe the system as legally regulated escrow unless the required regulatory/payment structure actually exists.
+
+---
+
+# 10. BUYER LIVE VIDEO VERIFICATION
+
+A major feature should be live communication between:
+
+Buyer ↔ Field Agent ↔ Seller
+
+The Field Agent should be able to initiate or coordinate a WhatsApp video call with the buyer.
+
+The Field Agent can physically show:
+
+- Product
+- Serial number
+- Damage
+- Functionality
+- Accessories
+- Packaging
+- Seller
+- Location/context where appropriate
+
+The buyer can ask:
+
+"Turn on the camera."
+
+"Open Settings."
+
+"Show the battery health."
+
+"Test the speaker."
+
+"Show me the screen from different angles."
+
+"Show me the serial number."
+
+This creates a human verification layer that ordinary online marketplaces don't provide.
+
+The platform should clearly explain that a video call is evidence/supporting verification, not an absolute guarantee against fraud.
+
+---
+
+# 11. NEGOTIATION SYSTEM
+
+The buyer can optionally authorize the Field Agent to negotiate.
+
+Example:
+
+Listing price:
+
+Rs. 120,000
+
+Buyer maximum:
+
+Rs. 110,000
+
+Instruction:
+
+"Try to purchase for Rs. 105,000. Do not exceed Rs. 110,000 without asking me."
+
+The Field Agent can negotiate.
+
+The system should support:
+
+- Original asking price
+- Negotiated price
+- Buyer's maximum authorized price
+- Field Agent negotiation permission
+- Buyer approval
+- Seller counteroffer
+- Final agreed price
+
+The Field Agent must not exceed the buyer's authorized maximum without explicit buyer approval.
+
+---
+
+# 12. DEAL FAILURE
+
+The system must support multiple failure reasons.
+
+Examples:
+
+- Seller unavailable
+- Seller location incorrect
+- Seller refuses inspection
+- Seller refuses video call
+- Product unavailable
+- Product doesn't match listing
+- Product defective
+- Product counterfeit/suspicious
+- Product significantly damaged
+- Price exceeds buyer authorization
+- Seller changes terms
+- Buyer rejects product after inspection
+- Safety issue
+- Field Agent cannot safely complete the task
+- Other documented reason
+
+When a deal fails:
+
+Purchase transaction = cancelled
+
+10% transaction fee = NOT charged
+
+Field Agent task/inspection payment = remains payable according to the agreed task terms.
+
+The system should record evidence and reason for cancellation.
+
+---
+
+# 13. "ALMOST ANYTHING" PRODUCT SUPPORT
+
+The platform should be designed for almost any legal physical product.
+
+Examples:
+
+- Phones
+- Laptops
+- Computers
+- Cameras
+- TVs
+- Electronics
+- Furniture
+- Appliances
+- Gaming consoles
+- Vehicles
+- Motorcycles
+- Machinery
+- Collectibles
+- Musical equipment
+- Tools
+- Home equipment
+- Used products
+- New products
+
+However, create product-specific inspection checklists.
+
+For example:
+
+PHONE:
+IMEI, battery, display, cameras, Face ID/fingerprint, charging, speakers, microphone, water damage indicators, parts replacement, accessories.
+
+LAPTOP:
+Screen, keyboard, battery, ports, storage, RAM, charger, webcam, speakers, Wi-Fi, physical condition.
+
+CAR:
+VIN/chassis, documents, exterior, interior, engine, fluids, tires, lights, test drive where legally/safely permitted, seller documents, etc.
+
+The platform should allow customizable inspection checklists.
+
+---
+
+# 14. SAFETY
+
+Field Agents are physically visiting strangers.
+
+Build safety into the product.
+
+Features should include:
+
+- Field Agent identity verification
+- CNIC/KYC verification where legally appropriate
+- Profile verification
+- Ratings/reviews
+- Completed task history
+- Emergency/SOS functionality
+- Task location sharing
+- Check-in/check-out
+- Trusted contact functionality
+- Evidence logging
+- Anti-fraud mechanisms
+- Suspicious transaction detection
+- Seller reporting
+- Buyer reporting
+- Agent reporting
+- Restricted/high-risk transaction categories
+- Safe meeting-location recommendations where appropriate
+- Clear rules for prohibited goods
+
+Never design the system as if every seller or buyer is trustworthy.
+
+---
+
+# 15. FIELD AGENT PROFILE
+
+A Field Agent profile should show useful trust information.
+
+For example:
+
+Name
+
+Verification status
+
+City
+
+Areas served
+
+Completed inspections
+
+Completed purchases
+
+Successful transactions
+
+Cancellation rate
+
+Average rating
+
+Buyer reviews
+
+Response time
+
+Typical acceptance time
+
+Specialized categories
+
+Phone/electronics inspection experience
+
+Vehicle inspection experience
+
+Availability
+
+Approximate service radius
+
+The platform should avoid misleading users with vanity metrics.
+
+---
+
+# 16. TRANSACTION STATES
+
+Design a complete transaction state machine.
+
+Possible states:
+
+REQUEST_CREATED
+
+FIELD_AGENT_BIDDING
+
+FIELD_AGENT_SELECTED
+
+TASK_PAYMENT_SECURED
+
+FIELD_AGENT_ACCEPTED
+
+AGENT_TRAVELLING
+
+AGENT_ARRIVED
+
+SELLER_VERIFIED
+
+PRODUCT_INSPECTION_STARTED
+
+PRODUCT_INSPECTION_COMPLETED
+
+BUYER_REVIEWING
+
+NEGOTIATION
+
+BUYER_APPROVAL_PENDING
+
+PURCHASE_APPROVED
+
+PURCHASE_CANCELLED
+
+PURCHASE_COMPLETED
+
+PRODUCT_COLLECTED
+
+PACKAGING_COMPLETED
+
+COURIER_HANDOVER
+
+IN_TRANSIT
+
+DELIVERED
+
+DISPUTE_OPENED
+
+DISPUTE_RESOLVED
+
+TRANSACTION_COMPLETED
+
+Design valid transitions and prevent impossible state changes.
+
+---
+
+# 17. EVIDENCE SYSTEM
+
+Every important action should create evidence.
+
+Examples:
+
+- Timestamp
+- GPS/location verification
+- Photos
+- Videos
+- Listing screenshots
+- Seller information
+- Inspection checklist
+- Product serial number
+- Buyer instructions
+- Buyer approval
+- Seller agreement
+- Negotiated price
+- Purchase receipt
+- Packaging photos
+- Courier handover proof
+- Delivery proof
+
+The system should maintain an immutable/auditable transaction timeline as far as technically and legally appropriate.
+
+---
+
+# 18. DISPUTE SYSTEM
+
+Design disputes between:
+
+Buyer vs Seller
+
+Buyer vs Field Agent
+
+Field Agent vs Seller
+
+Buyer vs Platform
+
+Examples:
+
+- Product was not the same as inspected
+- Product damaged during packaging
+- Product damaged during courier transportation
+- Agent falsely reported condition
+- Seller provided false information
+- Buyer claims unauthorized purchase
+- Seller claims payment wasn't received
+- Courier lost/damaged package
+
+Create an evidence-based dispute workflow.
+
+Do not automatically assume one party is guilty.
+
+---
+
+# 19. COURIER HANDOVER
+
+The Field Agent can:
+
+Option A:
+Hand the package to a courier.
+
+Option B:
+Personally deliver the product to the buyer when the distance and safety rules allow it.
+
+The system should support courier tracking.
+
+The Field Agent should photograph/video the package before handover.
+
+Courier handover should create a timestamp and proof.
+
+---
+
+# 20. REVENUE MODEL
+
+Primary revenue:
+
+10% of completed purchase value.
+
+Split:
+
+50% Field Agent
+
+50% Platform
+
+Example:
+
+Rs. 50,000 product
+
+10% = Rs. 5,000
+
+Field Agent = Rs. 2,500
+
+Platform = Rs. 2,500
+
+PLUS:
+
+Field Agent task/inspection fee is separately paid by buyer.
+
+If the deal fails:
+
+Platform transaction commission = Rs. 0
+
+Field Agent task payment = still payable.
+
+Create the database/payment architecture so this calculation cannot accidentally charge the 10% commission for cancelled deals.
+
+---
+
+# 21. ANTI-FRAUD
+
+Design strong anti-fraud mechanisms.
+
+Consider:
+
+- Identity verification
+- Device fingerprinting
+- Phone verification
+- Suspicious account detection
+- Multiple account detection
+- Location consistency
+- GPS verification
+- Impossible travel detection
+- Repeated cancellation patterns
+- Fake inspection detection
+- Image/video reuse detection
+- Manipulated evidence detection
+- Transaction limits
+- High-value transaction review
+- Suspicious seller patterns
+- Agent collusion detection
+- Buyer/agent/seller relationship detection
+- Payment fraud prevention
+
+Do not assume technology can eliminate fraud completely.
+
+Design for risk reduction and evidence collection.
+
+---
+
+# 22. CITY-BASED MARKETPLACE
+
+The platform should be location-aware.
+
+A buyer in Islamabad might need an agent in Lahore.
+
+A buyer in Peshawar might need an agent in Karachi.
+
+A buyer in Karachi might need an agent in Rawalpindi.
+
+The buyer should not need to physically know anyone in the seller's city.
+
+The platform connects them.
+
+Agents should be able to define:
+
+- Home city
+- Current city
+- Service areas
+- Maximum travel distance
+- Available hours
+- Categories they can inspect
+
+---
+
+# 23. IMPORTANT UX PRINCIPLE
+
+The app should make the concept understandable within seconds.
+
+The central message should essentially communicate:
+
+**"Can't visit the seller? Hire someone there to check it for you."**
+
+The product should visually explain:
+
+BUYER
+
+↓
+
+Finds product online
+
+↓
+
+Creates inspection request
+
+↓
+
+Chooses Field Agent
+
+↓
+
+Agent visits seller
+
+↓
+
+Agent verifies + inspects
+
+↓
+
+Buyer watches through video call
+
+↓
+
+Buyer approves/rejects
+
+↓
+
+Agent purchases + collects
+
+↓
+
+Agent packages
+
+↓
+
+Courier delivers
+
+↓
+
+Buyer receives product
+
+---
+
+# 24. BUILD THE PRODUCT ARCHITECTURE
+
+Based on all the requirements above, produce:
+
+1. Complete product specification
+2. User journeys
+3. UX flows
+4. Screen list
+5. Navigation structure
+6. Buyer dashboard
+7. Field Agent dashboard
+8. Seller/transaction information interface
+9. Admin dashboard
+10. Transaction state machine
+11. Database schema
+12. API architecture
+13. Authentication architecture
+14. Payment architecture
+15. Commission calculation system
+16. Escrow/protected-payment conceptual architecture
+17. Notification system
+18. Messaging system
+19. Evidence system
+20. Dispute system
+21. Rating/review system
+22. KYC/verification architecture
+23. Location/GPS architecture
+24. Courier integration architecture
+25. WhatsApp/video-call workflow
+26. Fraud-prevention architecture
+27. Security architecture
+28. Privacy architecture
+29. Scalability architecture
+30. Pakistan-first deployment strategy
+31. International expansion strategy
+32. Admin moderation system
+33. Analytics/events
+34. Error handling
+35. Edge cases
+36. Business rules
+37. Pricing rules
+38. Legal/compliance considerations that need professional review
+
+---
+
+# 25. VERY IMPORTANT DESIGN RULE
+
+Do not build this as:
+
+"Uber but for shopping."
+
+The core value proposition is:
+
+**Buyer-side physical representation.**
+
+The Field Agent is the buyer's trusted physical representative.
+
+Delivery is only one part of the workflow.
+
+Inspection + verification + live communication + negotiation + purchase + collection are the core service.
+
+---
+
+# 26. MVP
+
+Define a realistic MVP that can launch in Pakistan without unnecessarily building every advanced feature immediately.
+
+Separate features into:
+
+MVP
+
+V1
+
+V2
+
+Future
+
+Clearly identify what should NOT be built initially.
+
+Prioritize the smallest version that can actually validate whether buyers are willing to pay for this service.
+
+---
+
+# 27. BUSINESS QUESTIONS
+
+Before finalizing the architecture, identify unresolved business decisions.
+
+In particular, analyze:
+
+- How the Field Agent task fee should be calculated
+- Whether buyers should set a bid or the platform should recommend a price
+- Whether Field Agents should compete through bidding
+- Whether 10% should have a minimum/maximum
+- How high-value products should be handled
+- Who bears courier damage risk
+- How cancellations should work
+- How refunds should work
+- How buyer approval should work
+- How seller payment should be released
+- What happens if the Field Agent disappears with the product
+- What happens if the seller refuses to cooperate
+- What happens if the product becomes damaged after inspection
+- Whether the Field Agent can personally transport expensive products
+- Which categories require specialized agents
+- Which products should be prohibited
+- How disputes should be resolved
+- What legal structure/payment provider is appropriate in Pakistan
+
+Do not silently make major business decisions.
+
+Clearly mark assumptions and propose alternatives.
+
+---
+
+# 28. OUTPUT STYLE
+
+Think like a founder building a real company, not someone making a fictional app concept.
+
+Do not give me generic startup advice.
+
+Turn the idea into a concrete, technically implementable product.
+
+Where information is missing:
+
+1. Identify the missing decision.
+2. Give sensible options.
+3. Recommend a default architecture for the MVP.
+4. Explain the consequences of each option.
+
+Do not blindly follow my assumptions if they create contradictions.
+
+If something is technically, financially, legally, or operationally risky, explicitly identify the risk and suggest a safer architecture.
+
+The final goal is a real marketplace where:
+
+**A buyer can safely buy a product from a seller they cannot physically visit by hiring a verified Field Agent in the seller's city to act as their physical representative.**

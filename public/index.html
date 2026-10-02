@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#10151b" />
+  <title>Hire a Dealer</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="/vendor/maplibre-gl.css" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="phone">
+    <div class="brand" id="brand" aria-label="Hire a Dealer" title="Hire a Dealer">
+      <span class="brandmark">HD</span>
+      <span class="brandname">Hire a Dealer</span>
+    </div>
+
+    <div class="map" id="map"></div>
+
+    <div class="topbar" id="topbar"></div>
+
+    <div class="sheet hidden" id="sheet">
+      <div class="grab"></div>
+      <div id="sheet-content"></div>
+    </div>
+
+    <div class="profile hidden" id="profile">
+      <button class="avatar" id="avatar" aria-haspopup="menu" aria-expanded="false">?</button>
+      <div class="pmenu hidden" id="pmenu" role="menu">
+        <div class="pmenu-head"><b id="pm-name"></b><span id="pm-email"></span></div>
+        <button type="button" role="menuitem" data-pm="settings"><i>⚙</i> Settings</button>
+        <button type="button" role="menuitem" data-pm="docs"><i>📖</i> Docs</button>
+        <div class="pmenu-sep"></div>
+        <button type="button" role="menuitem" class="danger" data-pm="logout"><i>↩</i> Log out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth hidden" id="auth"></div>
+  <div class="modal hidden" id="modal"><div class="modalcard" id="modal-card"></div></div>
+  <div id="toast" class="toast hidden"></div>
+  <script src="/vendor/maplibre-gl.js"></script>
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "@had/domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure money, pricing, bid, and state-machine core. No framework, no I/O, no dependencies.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./money": "./src/money.ts",
+    "./pricing": "./src/pricing.ts",
+    "./bid": "./src/bid.ts",
+    "./commission": "./src/commission.ts",
+    "./state": "./src/state.ts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  }
+}

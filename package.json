@@ -1,0 +1,26 @@
+{
+  "name": "hire-a-dealer",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pakistan-first marketplace where a buyer bids to hire a verified Field Agent to inspect a used item before purchase.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "scripts": {
+    "test": "node --test \"packages/domain/test/*.test.ts\"",
+    "test:watch": "node --test --watch \"packages/domain/test/*.test.ts\"",
+    "typecheck": "tsc -p packages/domain/tsconfig.json --noEmit",
+    "check:ddl": "python tools/check_ddl.py",
+    "check": "npm run typecheck && npm test && npm run check:ddl",
+    "api:dev": "npm --workspace apps/api run start:dev",
+    "api:build": "npm --workspace apps/api run build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.3"
+  }
+}
