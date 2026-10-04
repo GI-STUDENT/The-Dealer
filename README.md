@@ -15,6 +15,8 @@ Post a bid, compare dealers by distance and their own Rs/km rate, and close the 
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![Feature](https://img.shields.io/badge/Feature-Field%20Agents-orange)
 
+</div>
+---
 
 # Hire a Dealer
 
