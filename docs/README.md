@@ -71,7 +71,7 @@ while the buyer's success fee, the dealer's bonus, and the seller's good name al
 same inspection.
 
 The confirmed model sharpens this: **the dealer now earns more from a closed sale than from an
-honest "no."** A Rs 150,000 phone pays the dealer Rs 3,000 to close and Rs 1,050 to walk away.
-Every design decision in this spec — the 72-hour dispute window, the capped bonus, the
+honest "no."** A Rs 150,000 phone pays the dealer Rs 6,000 to close and Rs 1,050 to walk away.
+Every design decision in this spec — the 72-hour dispute window, the 4% bonus, the
 evidence immutability, the deferred success-fee trigger — is subordinate to managing that
 conflict. Do not weaken any of them.

@@ -44,7 +44,7 @@ function normalizeEmail(v) {
 }
 
 function publicUser(a) {
-  return { name: a.name, email: a.email };
+  return { name: a.name, email: a.email, createdAt: a.createdAt };
 }
 
 function createSession(email) {
@@ -214,6 +214,14 @@ const DEALER_POOL = [
 
 DEALER_POOL.forEach((d) => { d.photo = avatarPhoto(d.name); });
 
+// Each dealer sets their OWN price/km in their preferences - there is no system rate for them.
+// The buyer's fair Rs 30/km is only the floor of the buyer's own rate; quotes come from these.
+const DEALER_RATES = {
+  'Ahmed Raza': 25, 'Bilal Khan': 45, 'Sana Malik': 30, 'Usman Tariq': 50, 'Hina Aslam': 35,
+  'Faisal Iqbal': 60, 'Ayesha Noor': 40, 'Kamran Shah': 100, 'Nadia Rehman': 30, 'Tariq Mehmood': 28,
+};
+DEALER_POOL.forEach((d) => { d.rate = DEALER_RATES[d.name] || 30; });
+
 const MAX_RADIUS_KM = MAX_DISTANCE_KM;
 
 const ACCEPT_NOTES = [
@@ -248,17 +256,23 @@ function makeResponses(request) {
   const bid = request.bidMinor;
   const pool = DEALER_POOL.slice().sort(() => Math.random() - 0.5).slice(0, 6);
 
+  // The buyer's rate = budget per km, floored at the fair Rs 30/km. Every dealer then quotes
+  // THEIR OWN price/km (set in their preferences) x their own distance - no system price:
+  // 5 km at Rs 50/km = Rs 250, 5 km at Rs 100/km = Rs 500, 30 km at Rs 30/km = Rs 900.
+  // Their rate vs yours decides Accept or Counter - the totals do not.
+  const yourRate = Math.max(bid / 100 / radius, BID_PER_KM_PKR);
+
   const out = pool.map((d, i) => {
     const distanceKm = Math.round((0.8 + Math.random() * (radius - 0.8)) * 10) / 10;
     const [dlng, dlat] = offsetKm(lat, lng, distanceKm, Math.random() * 360);
-    const threshold = Math.round(request.band.min * (0.85 + Math.random() * 0.6));
-    const accepts = bid >= threshold;
+    const ownPrice = Math.round((pkr(d.rate) * distanceKm) / 100) * 100;
     return {
       id: randomUUID(),
       dealer: {
         name: d.name,
         rating: d.rating,
         jobs: d.jobs,
+        ratePerKm: d.rate,
         city: request.origin.place,
         distanceKm,
         at: [Number(dlng.toFixed(5)), Number(dlat.toFixed(5))],
@@ -268,18 +282,18 @@ function makeResponses(request) {
         acceptRate: Math.min(96, Math.round(58 + (d.rating - 4.4) * 45)),
         replyMin: Math.max(6, Math.round(18 - (d.rating - 4.4) * 15)),
       },
-      kind: accepts ? 'accept' : 'counter',
-      amountMinor: accepts ? bid : Math.round(bid * (1.15 + Math.random() * 0.3)),
-      note: accepts ? ACCEPT_NOTES[i % ACCEPT_NOTES.length] : COUNTER_NOTES[i % COUNTER_NOTES.length],
+      kind: d.rate <= yourRate ? 'accept' : 'counter',
+      amountMinor: ownPrice,
+      note: d.rate <= yourRate ? ACCEPT_NOTES[i % ACCEPT_NOTES.length] : COUNTER_NOTES[i % COUNTER_NOTES.length],
       createdAt: nowIso(),
     };
   });
 
   // A buyer should always have someone to hire.
   if (out.length && !out.some((r) => r.kind === 'accept')) {
-    out[0].kind = 'accept';
-    out[0].amountMinor = bid;
-    out[0].note = ACCEPT_NOTES[0];
+    const cheapest = out.slice().sort((a, b) => a.dealer.ratePerKm - b.dealer.ratePerKm)[0];
+    cheapest.kind = 'accept';
+    cheapest.note = ACCEPT_NOTES[0];
   }
 
   out.sort((a, b) => a.dealer.distanceKm - b.dealer.distanceKm);
@@ -290,7 +304,7 @@ const FAILURE_LABELS = {
   honest_reject: 'Buyer decided not to buy',
   seller_fraud: 'Seller turned out to be fraudulent',
   price_exceeds_limit: 'Price rose above the buyer limit',
-  seller_fee_refused: 'Seller refused the 3% fee',
+  seller_fee_refused: 'Seller refused the 0.5% fee',
   seller_unavailable: 'Seller was unavailable',
   inspector_unsafe: 'Inspector aborted for safety',
   inspector_no_show: 'Inspector never showed up',
@@ -358,7 +372,8 @@ function selectResponse(request, responseId) {
   const r = request.responses.find((x) => x.id === responseId);
   if (!r) throw new HttpError(404, 'That response no longer exists.');
   request.selectedResponseId = r.id;
-  request.agreedBidMinor = r.kind === 'counter' ? r.amountMinor : request.bidMinor;
+  // Hiring pays the dealer's own quote (their km-based price), not the radius-wide bid.
+  request.agreedBidMinor = r.amountMinor;
   request.status = 'agent_selected';
   request.updatedAt = nowIso();
   return request;
@@ -498,6 +513,7 @@ const server = http.createServer(async (req, res) => {
 
   try {
     if (p === '/' || p === '/index.html') return serveStatic(res, 'index.html');
+    if (p.startsWith('/user/')) return serveStatic(res, 'index.html');
     if (p === '/styles.css') return serveStatic(res, 'styles.css');
     if (p === '/app.js') return serveStatic(res, 'app.js');
     if (p.startsWith('/vendor/')) return serveStatic(res, p.slice(1));
@@ -516,6 +532,32 @@ const server = http.createServer(async (req, res) => {
         normalBidAtMaxRange: pkr(BID_PER_KM_PKR * MAX_RADIUS_KM),
         normalBidAtMaxRangeLabel: formatPkr(pkr(BID_PER_KM_PKR * MAX_RADIUS_KM)),
         failures: Object.entries(FAILURE_LABELS).map(([key, label]) => ({ key, label })),
+      });
+    }
+
+    // Fee calculator for step 4: same code path the money flow uses (pricingBreakdown).
+    if (p === '/api/fees' && method === 'GET') {
+      const price = Number(u.searchParams.get('price'));
+      if (!Number.isFinite(price) || price <= 0 || price > 100_000_000) {
+        throw new HttpError(400, 'Enter an item price greater than zero.');
+      }
+      const minor = pkr(Math.round(price));
+      const b = pricingBreakdown(minor);
+      const pctOf = (m) => Math.round((m / minor) * 1000) / 10;
+      return json(res, 200, {
+        price: minor,
+        buyerFee: b.buyerFee,
+        buyerPct: pctOf(b.buyerFee),
+        sellerFee: b.sellerFee,
+        sellerPct: pctOf(b.sellerFee),
+        dealerBonus: b.dealerBonus,
+        dealerPct: pctOf(b.dealerBonus),
+        platformCut: b.companyTake,
+        platformPct: pctOf(b.companyTake),
+        totalFees: b.totalFees,
+        poolPct: pctOf(b.totalFees),
+        dealerSharePct: b.totalFees > 0 ? Math.round((b.dealerBonus / b.totalFees) * 100) : 0,
+        platformSharePct: b.totalFees > 0 ? Math.round((b.companyTake / b.totalFees) * 100) : 0,
       });
     }
 

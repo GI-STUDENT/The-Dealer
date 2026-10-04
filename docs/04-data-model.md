@@ -704,9 +704,9 @@ CREATE TABLE transactions (
   bid_minor             BIGINT NOT NULL CHECK (bid_minor > 0),      -- the buyer's bid, frozen
   travel_fee_minor      BIGINT NOT NULL DEFAULT 0 CHECK (travel_fee_minor >= 0),
   purchase_price_minor  BIGINT NOT NULL DEFAULT 0 CHECK (purchase_price_minor >= 0),
-  buyer_fee_minor       BIGINT NOT NULL DEFAULT 0 CHECK (buyer_fee_minor  >= 0),  -- 5%, 1.5k-15k
-  seller_fee_minor      BIGINT NOT NULL DEFAULT 0 CHECK (seller_fee_minor >= 0),  -- 3%, 1k-8k
-  dealer_bonus_minor    BIGINT NOT NULL DEFAULT 0 CHECK (dealer_bonus_minor >= 0),-- 2%, 1k-5k
+  buyer_fee_minor       BIGINT NOT NULL DEFAULT 0 CHECK (buyer_fee_minor  >= 0),  -- 5% of price
+  seller_fee_minor      BIGINT NOT NULL DEFAULT 0 CHECK (seller_fee_minor >= 0),  -- 5% of price
+  dealer_bonus_minor    BIGINT NOT NULL DEFAULT 0 CHECK (dealer_bonus_minor >= 0),-- 4% of price
   company_take_minor    BIGINT NOT NULL DEFAULT 0 CHECK (company_take_minor >= 0),-- the remainder
   milestone_released_minor BIGINT NOT NULL DEFAULT 0,
 

@@ -6,11 +6,12 @@
 > (§3.2, §3.3, §4), the custody/cash ceilings (§5.1), and the refund matrix (§6).
 >
 > **Confirmed changes vs. this document:**
-> - Company keeps **6%** of sale value, not 7%. Dealer gets a **2% success bonus capped at
->   Rs 5,000**, not a flat 3%. (A flat 3% pays Rs 15,000 for a Rs 500,000 laptop and Rs 450 for
->   a Rs 15,000 item — misaligned with effort.)
-> - **Buyer pays 5%** (min Rs 1,500 / max Rs 15,000). **Seller pays 3%** (min Rs 1,000 / max
->   Rs 8,000), collected on-site by the dealer.
+> - Company keeps **6%** of sale value, not 7%. Dealer gets a **4% success bonus** (= 40% of the
+>   10% fee pool), not a flat 3%. (A flat 3% pays Rs 15,000 for a Rs 500,000 laptop and Rs 450
+>   for a Rs 15,000 item — misaligned with effort.)
+> - **Buyer pays 5%. Seller pays 5%**, collected on the spot by the dealer. **Pure rates: no
+>   floor, no cap** — the same 5% · 5% · 4% · 6% split at every item price, so the fee
+>   calculator always shows the real percentage.
 > - The **inspection fee is set by the buyer's bid** and is paid in full to the dealer — the
 >   platform takes no cut of it.
 > - Only fees pass through the platform. The sale amount goes buyer → seller directly.
@@ -105,7 +106,7 @@ SETTLEMENT (state: purchase_authorized ──► settlement_pending)
           *** The Rs 150,000 never touches us. Only the fees below move through the PSP. ***
           Dealer records the transaction ref and captures it on video.
   Step 3  Buyer  ──► Platform  Buyer Success Fee    5%  [PSP]
-          Seller ──► Platform  Seller Success Fee   3%  [PSP, collected by the dealer on site, on camera]
+          Seller ──► Platform  Seller Success Fee   5%  [PSP, collected by the dealer on site, on camera]
           Platform ──► Ledger   Dr 1000 Clearing / Cr 4000 Success Fee Revenue
           *** TRIGGER FIRES HERE: only reachable from state purchase_completed ***
   Step 4  Dealer: settlement.seller_paid (evidence ≥1) ──► settlement_verified
@@ -115,8 +116,8 @@ CUSTODY & DELIVERY
   No platform money movement at any point. Courier collects.
 
 CLOSE (state: buyer_confirmed_receipt ──► dispute_window_elapsed)
-  Platform ──► Ledger  Dr 4000 Revenue        PKR 12,000   ← both success fees
-                     Cr 2200 Dealer Payable   PKR  3,000   ← 2% bonus, capped at 5,000
+  Platform ──► Ledger  Dr 4000 Revenue        PKR 15,000   ← both success fees
+                     Cr 2200 Dealer Payable   PKR  6,000   ← 4% bonus
                      Cr 3000 Equity           PKR  9,000   ← company take, 6%
   State: commission_settled
   Weekly payout run transfers 2200 balances to verified IBANs.
@@ -136,16 +137,16 @@ bid Rs 1,500, PSP ~3.5% of platform-collected fees, ops Rs 120, fraud reserve 1.
 |---|---|
 | Buyer pays seller directly | 150,000 |
 | Buyer success fee (5%) | 7,500 |
-| Seller success fee (3%, deducted on site) | 4,500 |
+| Seller success fee (5%, deducted on site) | 7,500 |
 | Inspection bid (buyer → dealer, in full) | 1,500 |
 | **Buyer pays in total** | **159,000** (6% over sticker) |
-| Seller receives | 145,500 |
-| Dealer receives | 1,500 bid + 3,000 bonus (2%) = **4,500** — ~Rs 1,800/hour |
+| Seller receives | 142,500 |
+| Dealer receives | 1,500 bid + 6,000 bonus (4%) = **7,500** — ~Rs 3,000/hour |
 | Platform keeps (6% of sale) | 9,000 |
-| PSP cost (on the 12,000 of fees only) | ≈ 420 + tax |
+| PSP cost (on the 15,000 of fees only) | ≈ 525 + tax |
 | Ops | 120 |
 | Fraud / dispute reserve (1.2%) | 1,800 |
-| **Platform contribution** | **≈ 6,660 — 4.4% of sale** |
+| **Platform contribution** | **≈ 6,555 — 4.4% of sale** |
 
 **Example B — deal fails. Product is counterfeit.**
 | Line | PKR |
@@ -160,29 +161,30 @@ bid Rs 1,500, PSP ~3.5% of platform-collected fees, ops Rs 120, fraud reserve 1.
 | Platform revenue | **0** |
 | Dealer receives | **1,050** |
 
-**Example C — low-ticket item, Rs 15,000. The floor is what saves this.**
+**Example C — low-ticket item, Rs 15,000. The rates never change shape.**
 | Line | PKR |
 |---|---|
-| Buyer success fee (5% = 750, floored at 1,500) | 1,500 |
-| Seller success fee (3% = 450, floored at 1,000) | 1,000 |
-| Fees collected | 2,500 |
-| Dealer bonus (2% = 300, floored at 1,000) | 1,000 |
-| Company take | 1,500 (10% of a 15,000 sale) |
-| PSP + ops + reserve | ≈ 390 |
-| **Platform contribution** | **≈ 1,110 — 7.4%** |
+| Buyer success fee (5%) | 750 |
+| Seller success fee (5%) | 750 |
+| Fees collected | 1,500 |
+| Dealer bonus (4% = 40% of the pool) | 600 |
+| Company take | 900 (6%) |
+| PSP + ops + reserve (1.2%) | ≈ 355 |
+| **Platform contribution** | **≈ 545 — 3.6%** |
 
-**Example D — expensive laptop, Rs 500,000. The caps are what saves this.**
+**Example D — expensive laptop, Rs 500,000. No cap: the rates hold.**
 | Line | PKR |
 |---|---|
-| Buyer success fee (5% = 25,000, capped at 15,000) | 15,000 |
-| Seller success fee (3% = 15,000, capped at 8,000) | 8,000 |
-| Dealer bonus (2% = 10,000, capped at 5,000) | 5,000 |
-| Company take | 18,000 |
-| PSP + ops + reserve (1.2%) | ≈ 7,000 |
-| **Platform contribution** | **≈ 11,000 — 2.2%** |
+| Buyer success fee (5%) | 25,000 |
+| Seller success fee (5%) | 25,000 |
+| Dealer bonus (4%) | 20,000 |
+| Company take | 30,000 (6%) |
+| PSP + ops + reserve (1.2%) | ≈ 7,900 |
+| **Platform contribution** | **≈ 22,100 — 4.4%** |
 
-Note Example D: a flat 3% dealer cut would have paid Rs 15,000 here for the same 2.5 hours of
-work that pays Rs 4,500 in Example A. That asymmetry is the reason the bonus is capped.
+Note Example D: the dealer earns Rs 7,500 in Example A and Rs 21,500 here (bid + bonus) —
+proportionate to the sale, which is why the bonus is a pure 4% of price rather than a capped
+amount. The same 5% / 5% / 4% / 6% split applies to every price, including Example C.
 
 ---
 
@@ -196,50 +198,43 @@ type Money = number; // integer paisa
 
 export type PriceBand =
   | { kind: 'flat';  amount: Money }
-  | { kind: 'pct';   rateBps: number; cap?: Money; floor?: Money };
+  | { kind: 'pct';   rateBps: number };
 
 export type PricingConfig = {
   bands: { upTo: Money | null; band: PriceBand }[]; // ordered, upTo:null = top band
   bidPerKm: Money;        // 3_000 = Rs 30 per km
   maxDistanceKm: number;  // 50 - the product's maximum search range
   difficultyMultipliers: Record<string, number>;
-  // Confirmed economics — see ../DECISIONS.md §2. These are config rows in `pricing_config`,
-  // not constants, so FBR rate changes and value-band tuning do not need a deploy.
+  // Confirmed economics — see ../DECISIONS.md §2. Pure rates: no floor, no cap.
+  // 5% buyer + 5% seller = the 10% fee pool; dealer 40% of it, platform 60%.
   buyerFeeBps: number;   // 500  = 5%
-  sellerFeeBps: number;  // 300  = 3%
-  dealerBonusBps: number;// 200  = 2%
-  bands_: {
-    buyer:  { floor: Money; cap: Money };
-    seller: { floor: Money; cap: Money };
-    dealer: { floor: Money; cap: Money };
-  };
+  sellerFeeBps: number;  // 500  = 5%
+  dealerBonusBps: number;// 400  = 4%
 };
 
-/** One-sided percentage of the sale price, clamped to a floor and a cap. */
-export function sideFee(priceMinor: Money, bps: number,
-                        floor: Money, cap: Money): Money {
+/** One-sided percentage of the sale price. No floor, no cap — the rate is the rate. */
+export function sideFee(priceMinor: Money, bps: number): Money {
   if (!Number.isSafeInteger(priceMinor) || priceMinor < 0) throw new DomainError('INVALID_AMOUNT');
   if (priceMinor === 0) return 0;   // a PKR 0 sale is a fraud signal, flagged upstream
   // Half-up at paisa. Round in the platform's favour only on charge,
   // never in the platform's favour on refund.
-  const raw = Math.floor((priceMinor * bps + 5000) / 10_000);
-  return Math.min(Math.max(raw, floor), cap);
+  return Math.floor((priceMinor * bps + 5000) / 10_000);
 }
 
 export const buyerSuccessFee  = (p: Money, c: PricingConfig): Money =>
-  sideFee(p, c.buyerFeeBps,  c.bands_.buyer.floor,  c.bands_.buyer.cap);   // 5%, 1.5k–15k
+  sideFee(p, c.buyerFeeBps);   // 5%
 
 export const sellerSuccessFee = (p: Money, c: PricingConfig): Money =>
-  sideFee(p, c.sellerFeeBps, c.bands_.seller.floor, c.bands_.seller.cap);  // 3%, 1k–8k
+  sideFee(p, c.sellerFeeBps);  // 5%
 
 /**
- * The dealer's cut of the sale — NOT a share of the fees. A flat 3% of sale price
- * pays Rs 15,000 for a Rs 500,000 laptop and Rs 450 for a Rs 15,000 item, for the
- * same 2.5 hours of work. 2% clamped to 1k–5k is effort-aligned and lands the
- * dealer at the same Rs 4,500 on a typical Rs 150,000 phone that a flat 3% would.
+ * The dealer's 4% of price — 40% of the 10% fee pool the buyer (5%) and the seller (5%)
+ * contribute — plus the inspection bid in full. A flat 3% pays Rs 15,000 for a Rs 500,000
+ * laptop and Rs 450 for a Rs 15,000 item for the same 2.5 hours of work; 4% is
+ * proportional and its shape never changes with the item price.
  */
 export const dealerSuccessBonus = (p: Money, c: PricingConfig): Money =>
-  sideFee(p, c.dealerBonusBps, c.bands_.dealer.floor, c.bands_.dealer.cap); // 2%, 1k–5k
+  sideFee(p, c.dealerBonusBps); // 4% = 40% of the fee pool
 
 /** The company's own take: the remainder after the dealer's bonus. */
 export const companyTake = (p: Money, c: PricingConfig): Money =>
@@ -264,7 +259,7 @@ export function taskFeeBand(req: {
 
 > The band ladder (`bands`) is retained for the **inspection bid** only — the buyer picks from
 > the suggested band and may bid inside or below it (`DECISIONS.md` §5.3). Success fees are a
-> flat rate with a floor and a cap, not a banded ladder; tiered success rates were dropped
+> flat rate with no floor and no cap, not a banded ladder; tiered success rates were dropped
 > because they made the buyer's final cost unpredictable at the moment of closing.
 
 Properties that must hold, and are covered by unit tests:
@@ -272,7 +267,8 @@ Properties that must hold, and are covered by unit tests:
   integer maps to a non-negative integer.
 - Each returns `0` at price `0`, and is **monotone non-decreasing** in purchase price.
 - `buyerSuccessFee + sellerSuccessFee - dealerSuccessBonus === companyTake`, exactly, always.
-- Floors and caps are respected: `floor <= f(p) <= cap` for all non-negative `p`.
+- `f(p)` is exactly `round(p × rate)` for every `p > 0` — no floors, no caps, so the fee
+  calculator can state the rate itself at any price.
 - `taskFeeBand.min <= mid <= max`, and the normal is exactly `bidPerKm × km` (Rs 30 × 50 =
   Rs 1,500 at the cap, Rs 30 × 10 = Rs 300 at 10 km).
 - **No success fee of any kind is computed on a transaction that has not closed** — this is

@@ -22,35 +22,42 @@ A **hiring service for inspectors** — not a product marketplace.
 
 ```
 BUYER pays                              SELLER pays
-├─ inspection bid (buyer sets it)       └─ 3% success fee
-└─ 5% success fee                       (only when the sale actually happens)
-   min Rs 1,500 · max Rs 15,000          min Rs 1,000 · max Rs 8,000
+├─ inspection bid (buyer sets it)       └─ 5% of the sale price
+└─ 5% of the sale price                (collected on the spot by the dealer,
+   charged at settlement                only when the sale actually happens)
 
 DEALER gets
 ├─ 100% of the inspection bid — we take no cut of it
-└─ 2% success bonus  min Rs 1,000 · max Rs 5,000
+└─ 4% of the sale price   (= 40% of the 10% fee pool)
 
-COMPANY keeps 6% of the sale price
+COMPANY keeps 6% of the sale price   (= 60% of the 10% fee pool)
+
+Pure rates — no floor, no cap. The shape is identical at every price:
+
+  Rs 10,000 item:  buyer pays 10,500 (+500) · seller hands over 500 →
+                   dealer 400, platform 600, seller keeps 9,400.
+                   The same 5% / 5% / 4% / 6% on a Rs 100 item or a Rs 500,000 laptop.
 ```
 
 | | Earlier draft (10% model) | Confirmed |
 |---|---|---|
 | Company keeps, Rs 150,000 sale | 7% | 6% |
 | Company net after provider, ops, reserve | 3.1% | **4.4%** |
-| Seller gives up | 5% | **3%** |
-| Dealer gets on a Rs 500,000 item | Rs 15,000 | **Rs 5,000** |
+| Seller gives up | 5% | **5%** |
+| Dealer gets on a Rs 500,000 item | Rs 15,000 | **Rs 20,000** (4%, uncapped) |
 | Buyer overpay on a Rs 150,000 phone | 6% | **6%** |
 
-### 2.1 Why the dealer bonus is capped, not a flat 3%
+### 2.1 Why the dealer bonus is 4% of price (40% of the fees), not a flat 3%
 
-The inspection is the same 2.5 hours whether the item is worth Rs 15,000 or Rs 500,000. A flat
-3% pays Rs 450 or Rs 15,000 for identical work. The 2% bonus with a Rs 1,000–5,000 band fixes
-the misalignment without hurting the dealer on a typical sale:
+The inspection is the same 2.5 hours whether the item is worth Rs 15,000 or Rs 500,000, so a
+flat 3% pays Rs 450 or Rs 15,000 for identical work. 4% of price — 40% of the 10% fee pool the
+buyer and seller contribute — keeps the dealer proportional to the sale, and it is a pure rate:
+no floor, no cap, so the fee calculator shows the same percentages at every item price.
 
 ```
-Rs 150,000 phone:  1,500 bid + 3,000 bonus = Rs 4,500   ← identical to the old 3%
-Rs 500,000 laptop: 1,500 bid + 5,000 bonus = Rs 6,500   ← not Rs 15,000
-Rs  15,000 item:   1,500 bid + 1,000 bonus = Rs 2,500   ← not Rs 450
+Rs  10,000 item:   bid + 400 bonus                    (40% of the 1,000 fee pool)
+Rs 150,000 phone:  1,500 bid + 6,000 bonus = Rs 7,500 (40% of the 15,000 fee pool)
+Rs 500,000 laptop: 1,500 bid + 20,000 bonus = Rs 21,500 (40% of the 50,000 fee pool)
 ```
 
 ### 2.2 Worked example — Rs 150,000 phone
@@ -61,16 +68,16 @@ Buyer pays   150,000 to seller
             +   1,500  inspection bid
             = 159,000                                   (6% over sticker)
 
-Seller gets  145,500                                   (after 3%)
+Seller gets  142,500                                   (after 5%)
 
-Dealer gets    4,500   for ~2.5 hrs  = Rs 1,800/hour
-                      20 jobs/month   = Rs 90,000/month
+Dealer gets    7,500   for ~2.5 hrs  = Rs 3,000/hour
+                      20 jobs/month   = Rs 150,000/month
 
 Company keeps  9,000  (6%)
-              −   420  payment provider, 3.5% on the 12,000 we actually handle
+              −   525  payment provider, 3.5% on the 15,000 we actually handle
               −   120  support and ops
               − 1,800  fraud and dispute reserve
-              = 6,666 net  (4.4% of sale value)
+              = 6,555 net  (4.4% of sale value)
 ```
 
 ### 2.3 Why 6% is defensible to the buyer
@@ -79,18 +86,18 @@ Buying blind on a Pakistani classified, the expected loss is roughly **9% of the
 chance of a problem at an average loss of 60% of value. Paying 6% to remove that is cheap. This
 is the sentence to put in the pitch and in the fee explainer.
 
-### 2.4 Why the seller fee is 3% and not 5%
+### 2.4 Why the seller fee is 5%
 
 Sellers are individuals with thin margins. A seller who refuses the fee stops the deal for
-everyone — no sale, no buyer fee, no dealer bonus, no company revenue. A lower fee that gets
-accepted is worth more than a higher one that does not.
+everyone — no sale, no buyer fee, no dealer bonus, no company revenue. 5% matches the buyer side
+and keeps the arithmetic the buyer sees honest: 5% + 5% − 4% = the 6% the platform keeps.
 
-**The argument that works, and that the inspector makes on the spot:** *the 3% is only charged if
+**The argument that works, and that the inspector makes on the spot:** *the 5% is only charged if
 you actually sell. Zero risk. And the buyer is verified and will definitely pay you.*
 
 If seller collection proves difficult in the pilot, the fallback is **0% seller fee in MVP**,
-with the company taking ~1.5% net — thin but survivable. Raise it again once sellers see the
-value. Do not raise it above 3% before 500 completed sales.
+with the company taking ~1% net — thin but survivable. Raise it again once sellers see the
+value. Do not raise it above 5% before 500 completed sales.
 
 ---
 
@@ -98,13 +105,13 @@ value. Do not raise it above 3% before 500 completed sales.
 
 | Outcome | Buyer pays | Seller pays | Dealer gets | Company gets |
 |---|---|---|---|---|
-| Sale completes | bid + 5% | 3% | bid + 2% bonus | 6% |
+| Sale completes | bid + 5% | 5% | bid + 4% bonus | 6% |
 | Inspector is honest, buyer rejects the item | bid only | 0 | **70% of bid** | inspection share only |
 | Seller is a fraud / refuses to cooperate | bid only | 0 | **70% of bid** | inspection share only |
 | Price exceeds buyer's limit | bid only | 0 | **70% of bid** | inspection share only |
 | Inspector did not show up | nothing | 0 | 0 | 0 |
 | Inspector felt unsafe and left | bid only | 0 | **100% of bid** | inspection share only |
-| **Anything where no money moves** | — | — | **no 2% bonus** | **no 5%, no 3%** |
+| **Anything where no money moves** | — | — | **no 4% bonus** | **no 5%, no 5%** |
 
 The last row is the one that matters. If there is no sale, there is no success fee from either
 side and no dealer bonus. Structurally enforced in the database — see `docs/06` §3.
@@ -120,12 +127,12 @@ seller, with the inspector watching.
 Buyer  ── Rs 150,000 ──────────────────►  Seller     (inspector present, on camera)
 Buyer  ── Rs   1,500  inspection bid ──►  Platform   (direct to dealer, full amount)
 Buyer  ── Rs   7,500  5% fee ──────────►  Platform
-Seller ── Rs   4,500  3% fee ──────────►  Platform   (inspector collects on-site)
+Seller ── Rs   7,500  5% fee ──────────►  Platform   (inspector collects on-site)
 
-Platform pays dealer the 1,500 bid + 3,000 bonus. Keeps 6,000 of the 12,000 in fees.
+Platform pays dealer the 1,500 bid + 6,000 bonus. Keeps 9,000 of the 15,000 in fees.
 ```
 
-The platform provider costs ~3.5% of the Rs 12,000 in fees, not of the Rs 150,000 sale. That is
+The platform provider costs ~3.5% of the Rs 15,000 in fees, not of the Rs 150,000 sale. That is
 the whole reason the purchase amount does not come to us.
 
 The inspector collects the seller's fee at the visit. That is workable because the inspector is
@@ -237,7 +244,7 @@ touch them. Cars come in version 2.
 
 The platform never holds the buyer's purchase money. It handles only the inspection bid and the
 two success fees. This is deliberate: it keeps the platform outside money transmission, and it
-means the provider charges us 3.5% of Rs 12,000 instead of 3.5% of Rs 150,000.
+means the provider charges us 3.5% of Rs 15,000 instead of 3.5% of Rs 150,000.
 
 ---
 

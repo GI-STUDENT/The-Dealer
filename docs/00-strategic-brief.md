@@ -7,9 +7,9 @@
 > deliberately, because it explains *why* the numbers moved.
 >
 > What changed:
-> - The 10% single commission is **replaced** by buyer 5% + seller 3% (`DECISIONS.md` §2).
-> - The dealer takes **no cut of the inspection bid** and a **2% bonus capped at Rs 5,000**,
->   replacing a 50/50 split of the 10%.
+> - The 10% single commission is **replaced** by buyer 5% + seller 5% (`DECISIONS.md` §2).
+> - The dealer takes **no cut of the inspection bid** and a **4% bonus (40% of the 10% fee pool,
+>   pure rate, no floor or cap)**, replacing a 50/50 split of the 10%.
 > - **No custody, confirmed as the design, not a fallback** (`DECISIONS.md` §7).
 > - The **buyer now bids first** to hire an inspector (`DECISIONS.md` §5).
 > - Platform **keeps 6%** and nets ~4.4%, not the 5% assumed in §4.2.
@@ -208,16 +208,16 @@ is the strongest single anti-substitution control available at reasonable cost.
 ### 4.1 Two fees, clearly separated in the UI
 
 > Confirmed shape (`DECISIONS.md` §2, §4): the buyer pays the **inspection bid** (buyer-set,
-> paid in full to the dealer) plus a **5% success fee**; the **seller pays 3%**; the dealer
-> earns the bid plus a **2% capped bonus**; the company keeps the rest. The purchase price is
+> paid in full to the dealer) plus a **5% success fee**; the **seller pays 5%**; the dealer
+> earns the bid plus a **4% bonus**; the company keeps the rest. The purchase price is
 > still paid directly to the seller and never touches us. The original diagram is kept below.
 
 ```
 BUYER PAYS
 ├─ Inspection Bid    → buyer-set, paid at accept, released to the dealer on milestones.
 │                      The platform takes NO cut of it (DECISIONS.md section 5).
-├─ Success Fee       → 5% (1.5k-15k) of the ACTUAL purchase price, charged at settlement.
-│                      The seller separately pays 3% (1k-8k). (Confirmed, not the old 10%.)
+├─ Success Fee       → 5% of the ACTUAL purchase price, charged at settlement.
+│                      The seller separately pays 5%, collected on the spot. (Not the old 10%.)
 └─ Purchase Price    → paid DIRECTLY to seller by buyer, at the seller's location,
                        recorded on camera by the Field Agent
                        (platform does NOT custody this — confirmed design, not a fallback)
@@ -234,14 +234,14 @@ most defensible product promise: *"If the inspection fails, you only pay for the
 ### 4.2 Recommended commission curve
 
 > **SUPERSEDED.** The banded single 10% curve below was the *original* recommendation. The
-> **confirmed** model is a flat two-sided fee with floors and caps:
+> **confirmed** model is a flat two-sided fee — pure rates, no floors, no caps:
 >
-> | Side | Rate | Floor | Cap | At a Rs 150,000 phone |
-> |---|---|---|---|---|
-> | Buyer success fee | 5% | Rs 1,500 | Rs 15,000 | Rs 7,500 |
-> | Seller success fee | 3% | Rs 1,000 | Rs 8,000 | Rs 4,500 |
-> | Dealer success bonus | 2% | Rs 1,000 | Rs 5,000 | Rs 3,000 |
-> | Company keeps | remainder | — | — | **Rs 9,000 (6%)**, netting ~4.4% |
+> | Side | Rate | At a Rs 10,000 item | At a Rs 150,000 phone |
+> |---|---|---|---|
+> | Buyer success fee | 5% | Rs 500 | Rs 7,500 |
+> | Seller success fee | 5% | Rs 500 | Rs 7,500 |
+> | Dealer success bonus | 4% (= 40% of the fee pool) | Rs 400 | Rs 6,000 |
+> | Company keeps | 6% (= 60% of the fee pool) | **Rs 600** | **Rs 9,000** |
 >
 > **The inspection bid is set by the buyer, not by a price table**, and the platform takes no
 > cut of it. The suggested band is **distance only** — Rs 30 per km of seller-to-dealer range,
@@ -251,7 +251,7 @@ most defensible product promise: *"If the inspection fails, you only pay for the
 | Purchase price band | ~~Success fee~~ superseded | Rationale |
 |---|---|---|
 | ≤ PKR 25,000 | ~~Flat PKR 1,500~~ | kept as the floor input for the buyer's suggested bid |
-| PKR 25,001 – PKR 500,000 | ~~10%~~ | superseded by 5% buyer + 3% seller |
+| PKR 25,001 – PKR 500,000 | ~~10%~~ | superseded by 5% buyer + 5% seller |
 | > PKR 500,000 | ~~8%, capped PKR 40,000~~ | out of v1 scope entirely |
 | Prohibited / high-risk | — | No transaction. See §7 |
 
@@ -280,8 +280,10 @@ Plus a difficulty multiplier for after-hours/meetup-unfriendly locations.
 | Car (full inspection + test drive) | ~~PKR 7,500~~ — **not in v1** |
 
 **Dealer economics target:** a competent Lahore/Karachi dealer earns the bid in full plus a
-capped 2% bonus. At the confirmed numbers (bid Rs 1,500 + bonus Rs 3,000 = **Rs 4,500** on a
-typical Rs 150,000 phone, ~2.5 hours), 20 jobs/month is **Rs 90,000**. If that math does not
+4% bonus (40% of the 10% fee pool, pure rate). At the confirmed numbers (bid Rs 1,500 +
+bonus Rs 6,000 =
+**Rs 7,500** on a typical Rs 150,000 phone, ~2.5 hours), 20 jobs/month is **Rs 150,000**. If that
+math does not
 work, the supply side will not build, and **no software fixes it**. Model this in a
 spreadsheet before writing a line of code — it is the binding constraint.
 
@@ -411,11 +413,11 @@ likely to fail in practice. **Policy: the agent captures whatever exists, the bu
    decides.** A hard block would block most legitimate transactions and push them off-platform.
    Validate the wording with 20 real buyers during the pilot and tune.
 - **Agent income is decided by requests-per-day, not by commission rate.** With ~2.5 hours per
-  job, a confirmed earning of Rs 1,500 bid + Rs 3,000 bonus = **Rs 4,500** (`DECISIONS.md` §2)
-  means roughly one job per working day to earn Rs 90,000/month. Launch with **8–12 agents** for
+   job, a confirmed earning of Rs 1,500 bid + Rs 6,000 bonus = **Rs 7,500** (`DECISIONS.md` §2)
+   means roughly one job per working day to earn Rs 150,000/month. Launch with **8–12 agents** for
   one city; five daily requests against twelve agents still starves half of them, so match
   recruitment to demand as it arrives rather than to headcount targets.
-- **The seller's 3% is the deal's most fragile point.** If the seller refuses, the buyer pays no
+- **The seller's 5% is the deal's most fragile point.** If the seller refuses, the buyer pays no
   success fee, the dealer earns no bonus and the company earns nothing — and the buyer's
   inspection is wasted. The inspector sells it as "only charged if you sell; zero risk; verified
   buyer." Instrument seller-fee refusal rate from transaction one; above **15%** the fee is

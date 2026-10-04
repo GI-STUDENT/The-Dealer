@@ -31,11 +31,11 @@ describe('commission — the happy path', () => {
     const d = evaluateCommission(validSnapshot, NOW);
     assert.equal(d.eligible, true);
     if (!d.eligible) return;
-    assert.equal(d.buyerFee, pkr(7_500));
-    assert.equal(d.sellerFee, pkr(4_500));
-    assert.equal(d.totalFees, pkr(12_000));
-    assert.equal(d.dealerBonus, pkr(3_000));
-    assert.equal(d.companyTake, pkr(9_000));
+    assert.equal(d.buyerFee, pkr(750)); // 0.5%
+    assert.equal(d.sellerFee, pkr(750)); // 0.5%
+    assert.equal(d.totalFees, pkr(1_500)); // 1% = the fee pool
+    assert.equal(d.dealerBonus, pkr(600)); // 0.4% = 40% of the pool
+    assert.equal(d.companyTake, pkr(900)); // 0.6% = 60% of the pool
   });
 });
 

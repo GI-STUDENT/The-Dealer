@@ -279,7 +279,7 @@ POST   /webhooks/livekit/recording      recording-ready → evidence ingest
   "next_action": null }
 ```
 Note `purchase_price_minor: 0` and **every success-fee field at 0**. No sale, so no buyer 5%,
-no seller 3%, no dealer bonus, no company revenue (`DECISIONS.md` section 3). The dealer still
+no seller 5%, no dealer bonus, no company revenue (`DECISIONS.md` section 3). The dealer still
 earns the 70% released above — that is the cost of an honest "no". The response makes the
 outcome unambiguous, so no UI bug can imply otherwise.
 

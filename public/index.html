@@ -28,7 +28,8 @@
     <div class="profile hidden" id="profile">
       <button class="avatar" id="avatar" aria-haspopup="menu" aria-expanded="false">?</button>
       <div class="pmenu hidden" id="pmenu" role="menu">
-        <div class="pmenu-head"><b id="pm-name"></b><span id="pm-email"></span></div>
+        <a role="menuitem" data-pm="profile" id="pm-profile" href="/user/me"><i>👤</i> Profile</a>
+        <button type="button" role="menuitem" data-pm="switch" id="pm-switch"><i>⇄</i> Switch to dealer profile</button>
         <button type="button" role="menuitem" data-pm="settings"><i>⚙</i> Settings</button>
         <button type="button" role="menuitem" data-pm="docs"><i>📖</i> Docs</button>
         <div class="pmenu-sep"></div>
@@ -37,6 +38,7 @@
     </div>
   </div>
 
+  <div class="userpage hidden" id="userpage"></div>
   <div class="auth hidden" id="auth"></div>
   <div class="modal hidden" id="modal"><div class="modalcard" id="modal-card"></div></div>
   <div id="toast" class="toast hidden"></div>

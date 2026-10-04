@@ -4,7 +4,7 @@
 > 1. **The buyer bids first.** `PUBLISHED_REQUEST` fans a bid out to the dealer feed; dealers
 >    respond with accept / counter / decline. The bid is frozen on first acceptance
 >    (`bid_locked_at`). See BR-009 and the `RESPONSE_RECEIVED` → `RESPONSE_RECEIVED` guard.
-> 2. **Success fees are two-sided** (buyer 5%, seller 3%) and exist **only when money moves**.
+> 2. **Success fees are two-sided** (buyer 5%, seller 5%) and exist **only when money moves**.
 >    The `commission.settle` transition therefore settles *both* fees and the dealer bonus at
 >    once, and is unreachable unless `purchase_completed_at` is set. See `06` §3.2.
 >
@@ -156,8 +156,8 @@ Guards are server-side and evaluated in order. A transition fails closed: any un
 | `BID_SECURED` | `agent.enroute` | actor=agent | `AGENT_EN_ROUTE` |
 | `AGENT_EN_ROUTE` | `agent.checkin` | as above | `AGENT_ARRIVED` |
 | `BID_SECURED` | `agent.no_show.expire` | `accepted_at + 4h` ∧ no check-in | `AGENT_NO_SHOW` |
-| `AGENT_ARRIVED` | `seller.identity.capture` | ≥1 ID image ∧ consent flag ∧ seller name+phone captured ∧ **seller acknowledges the 3% success fee on camera** | `SELLER_IDENTITY_VERIFIED` |
-| `SELLER_IDENTITY_VERIFIED` | `seller.fee.declined` | seller withdraws consent to the 3% | `DEAL_FAILED(seller_fee_refused)` — bid refunded per `06` §4, no success fee, no dealer bonus |
+| `AGENT_ARRIVED` | `seller.identity.capture` | ≥1 ID image ∧ consent flag ∧ seller name+phone captured ∧ **seller acknowledges the 5% success fee on camera** | `SELLER_IDENTITY_VERIFIED` |
+| `SELLER_IDENTITY_VERIFIED` | `seller.fee.declined` | seller withdraws consent to the 5% | `DEAL_FAILED(seller_fee_refused)` — bid refunded per `06` §4, no success fee, no dealer bonus |
 | `SELLER_IDENTITY_VERIFIED` | `possession.submit` | evidence present ∧ reviewer verdict recorded | `POSSESSION_CONFIRMED` or `POSSESSION_FAILED` |
 | `SELLER_IDENTITY_VERIFIED` | `seller.absent.expire` | wait ≥ 30 min logged | `DEAL_FAILED(seller_unavailable)` |
 | `POSSESSION_CONFIRMED` | `inspection.start` | actor=agent ∧ category clearance | `INSPECTION_IN_PROGRESS` |

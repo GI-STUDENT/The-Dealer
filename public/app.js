@@ -27,7 +27,10 @@ const STATUS = {
   failed: { label: 'Not completed', cls: 'red' },
 };
 
-const state = { config: null, current: null, list: [], dealers: [], step: 1, user: null, bidTouched: false };
+const state = {
+  config: null, current: null, list: [], dealers: [], step: 1, user: null, bidTouched: false,
+  mode: localStorage.getItem('hd_mode') === 'dealer' ? 'dealer' : 'buyer',
+};
 
 const TOKEN_KEY = 'hd_token';
 
@@ -355,7 +358,12 @@ const defaultForm = () => {
 };
 
 function hasLocation() { return state.form.lat != null && state.form.lng != null; }
-function canPost() { return hasLocation() && String(state.form.title).trim().length > 0; }
+// Input guard only, not a fee floor — below this the 0.5%/0.4% rows would round to zero.
+const MIN_PRICE = 1000;
+function priceOk() { return Number(state.form.askingPrice) >= MIN_PRICE; }
+function canPost() { return hasLocation() && String(state.form.title).trim().length > 0 && priceOk(); }
+// Only the bid is paid to hire the agent — success fees are deducted when the deal closes.
+function bidMinorNow() { return Math.round(state.form.bid * 100); }
 
 // ---------- top bar ----------
 function renderTopbar(req) {
@@ -367,6 +375,7 @@ function renderTopbar(req) {
     tb.innerHTML = '';
     return;
   }
+  if (isDealer()) return renderDealerBar();
   tb.classList.remove('hidden');
 
   const f = state.form;
@@ -376,6 +385,7 @@ function renderTopbar(req) {
     ['1', 'Location', stepDone(1)],
     ['2', 'Bid', stepDone(2)],
     ['3', 'Item', stepDone(3)],
+    ['4', 'Fees', stepDone(4)],
   ].map(([n, label, done]) => {
     const cls = Number(n) === step ? 'on' : done ? 'done' : '';
     const mark = done && Number(n) !== step ? '✓' : n;
@@ -407,20 +417,27 @@ function renderTopbar(req) {
         <div class="rlabels"><span id="r-min"></span><span id="r-max"></span></div>
         <div class="bandnote" id="bandnote"></div>
         <div class="flag" id="flag"></div>
-      </div>
-      <div class="field"><label>Item asking price (Rs)</label>
-        <input class="input" id="f-price" type="number" min="1" step="500" value="${f.askingPrice}"></div>`;
-  } else {
+      </div>`;
+  } else if (step === 3) {
     body = `
       <div class="field"><label class="budgetlabel">Item <span class="cnt" id="title-cnt">${f.title.length}/50</span></label>
         <input class="input" id="f-title" maxlength="50" placeholder="e.g. iPhone 13 Pro 256GB" value="${esc(f.title)}"></div>
       <div class="field"><label class="budgetlabel">Description <span class="cnt" id="desc-cnt">${f.description.length}/150</span></label>
         <textarea class="input" id="f-desc" maxlength="150" rows="2" placeholder="Condition, accessories, what to check">${esc(f.description)}</textarea></div>`;
+  } else {
+    // step 4 — Fees Calculation: a calculator, the buyer types the item price and we show
+    // every fee against it (0.5% buyer · 0.5% seller · 0.4% dealer bonus · 0.6% platform cut).
+    body = `
+      <div class="field"><label class="budgetlabel">Item price (Rs)</label>
+        <input class="input" id="f-price" type="text" inputmode="numeric" autocomplete="off"
+               placeholder="e.g. 150,000"
+               value="${f.askingPrice > 0 ? Number(f.askingPrice).toLocaleString('en-PK') : ''}"></div>
+      <div class="feebox" id="feebox"><div class="fee-loading">Calculating…</div></div>`;
   }
 
-  const action = step === 3
-    ? `<button type="button" class="btn primary" id="post" ${canPost() ? '' : 'disabled'}>Find dealers · <span id="cta-price">${fmt(f.bid * 100)}</span></button>`
-    : `<button type="button" class="btn primary" id="tb-next">${step === 1 ? 'Next: set your bid' : 'Next: describe the item'}</button>`;
+  const action = step === 4
+    ? `<button type="button" class="btn primary" id="post" ${canPost() ? '' : 'disabled'}>Find dealers · <span id="cta-price">${fmt(bidMinorNow())}</span></button>`
+    : `<button type="button" class="btn primary" id="tb-next">${step === 1 ? 'Next: set your bid' : step === 2 ? 'Next: describe the item' : 'Next: fees calculation'}</button>`;
 
   const foot = (step > 1 && hasLocation() ? `
     <button type="button" class="chosen" data-step="1" title="Change location">
@@ -445,12 +462,13 @@ function renderTopbar(req) {
     b.addEventListener('click', () => { state.step = Number(b.dataset.step); renderTopbar(); }));
 
   const next = $('#tb-next');
-  if (next) next.addEventListener('click', () => { state.step = Math.min(3, state.step + 1); renderTopbar(); });
+  if (next) next.addEventListener('click', () => { state.step = Math.min(4, state.step + 1); renderTopbar(); });
 
   if (step === 1) wireLocationStep();
   if (step === 2) { wireBidStep(); paintBid(); }
-  if (step === 3) {
-    wireItemStep();
+  if (step === 3) wireItemStep();
+  if (step === 4) {
+    wireFeeStep();
     const p = $('#post');
     if (p) p.addEventListener('click', post);
   }
@@ -498,7 +516,82 @@ function wireLocationStep() {
 function wireBidStep() {
   $('#bid-minus').addEventListener('click', () => { state.bidTouched = true; setForm({ bid: Math.max(50, state.form.bid - 100) }); paintBid(); refreshNext(); });
   $('#bid-plus').addEventListener('click', () => { state.bidTouched = true; setForm({ bid: state.form.bid + 100 }); paintBid(); refreshNext(); });
-  $('#f-price').addEventListener('input', (e) => { setForm({ askingPrice: Number(e.target.value) || 0 }); paintBid(); });
+}
+
+// ---------- step 4: fee calculator ----------
+function wireFeeStep() {
+  const input = $('#f-price');
+  paintFees();
+  let t;
+  input.addEventListener('input', () => {
+    const raw = String(input.value);
+    const digits = raw.replace(/[^\d]/g, '');
+    const v = digits === '' ? 0 : Number(digits);
+    setForm({ askingPrice: Number.isFinite(v) && v > 0 ? Math.round(v) : 0 });
+    // regroup with thousands separators and put the caret back after the same number of digits
+    const digitsBefore = raw.slice(0, input.selectionStart ?? raw.length).replace(/[^\d]/g, '').length;
+    const formatted = v > 0 ? v.toLocaleString('en-PK') : '';
+    input.value = formatted;
+    let seen = 0;
+    let pos = digitsBefore === 0 ? 0 : formatted.length;
+    for (let i = 0; i < formatted.length; i++) {
+      if (formatted[i] >= '0' && formatted[i] <= '9') seen++;
+      if (digitsBefore > 0 && seen === digitsBefore) { pos = i + 1; break; }
+    }
+    input.setSelectionRange(pos, pos);
+    refreshNext();
+    const box = $('#feebox');
+    if (box) box.innerHTML = '<div class="fee-loading">Calculating…</div>';
+    clearTimeout(t);
+    t = setTimeout(paintFees, 220);
+  });
+  // re-group with thousands separators only on blur, so the caret never jumps while typing
+  input.addEventListener('blur', () => {
+    const v = Math.round(Number(state.form.askingPrice) || 0);
+    input.value = v > 0 ? v.toLocaleString('en-PK') : '';
+  });
+}
+
+async function paintFees() {
+  const box = $('#feebox');
+  if (!box) return;
+  const price = Math.round(Number(state.form.askingPrice) || 0);
+  if (price < MIN_PRICE) {
+    box.innerHTML = `<div class="fee-loading">Enter an item price of Rs ${MIN_PRICE.toLocaleString('en-PK')} or more to see the fee breakdown.</div>`;
+    return;
+  }
+  try {
+    const fees = await api(`/api/fees?price=${price}`);
+    const b = $('#feebox');
+    if (b) b.innerHTML = feeMarkup(fees);
+  } catch (e) {
+    const b = $('#feebox');
+    if (b) b.innerHTML = `<div class="fee-loading">${esc(e.message)}</div>`;
+  }
+}
+
+function feeMarkup(x) {
+  const bidMinor = Math.round(state.form.bid * 100);
+  const youPay = bidMinor + x.buyerFee;
+  const row = (k, v, sub, cls = '') => `
+    <div class="fline ${cls}"><span class="k">${k}${sub ? `<i>${sub}</i>` : ''}</span><b>${v}</b></div>`;
+
+  return `
+    <div class="fgroup">You pay</div>
+    <div class="fline">
+      <span class="k">Inspection bid</span>
+      <b>${fmt(bidMinor)} <span class="noref">[non-refundable]</span></b>
+    </div>
+    ${row('Your success fee', fmt(x.buyerFee), `${x.buyerPct}% of price · deducted only if the deal closes`)}
+    <div class="fline total"><span class="k">If the deal closes <i>bid + ${x.buyerPct}% success fee</i></span><b>${fmt(youPay)}</b></div>
+
+    <div class="fgroup">Seller pays on the spot</div>
+    ${row('Seller fee', fmt(x.sellerFee), `${x.sellerPct}% · collected by the dealer on the spot`)}
+
+    <div class="fgroup">How the ${x.poolPct}% fee splits</div>
+    ${row(`Fee ${x.poolPct}%`, fmt(x.totalFees), '', 'pool')}
+    ${row('Dealer bonus', fmt(x.dealerBonus), `${x.dealerPct}% of price · paid by the platform`)}
+    ${row('Platform cut', fmt(x.platformCut), `${x.platformPct}% of price · kept by the platform`)}`;
 }
 
 function wireItemStep() {
@@ -519,6 +612,8 @@ function wireItemStep() {
 function refreshNext() {
   const b = $('#post');
   if (b) b.disabled = !canPost();
+  const c = $('#cta-price');
+  if (c) c.textContent = fmt(bidMinorNow());
 }
 
 function applyLocation(lat, lng, label) {
@@ -531,7 +626,7 @@ function applyLocation(lat, lng, label) {
 
 // Used by the map "click to pick" handler and by tests.
 async function pickLocation(lat, lng) {
-  if (state.current) return null;
+  if (state.current || isDealer()) return null;
   toast('Finding this place…');
   const label = await reversePlace(lat, lng);
   applyLocation(lat, lng, label);
@@ -543,15 +638,18 @@ async function pickLocation(lat, lng) {
 function stepDone(n) {
   const f = state.form;
   if (n === 1) return hasLocation();
-  if (n === 2) return hasLocation() && f.bid > 0 && f.askingPrice > 0;
-  if (n === 3) return hasLocation() && f.bid > 0 && f.askingPrice > 0 && String(f.title).trim().length > 0;
+  if (n === 2) return hasLocation() && f.bid > 0 && priceOk();
+  if (n === 3) return hasLocation() && f.bid > 0 && priceOk() && String(f.title).trim().length > 0;
+  if (n === 4) return stepDone(3);
   return false;
 }
 
 // ---------- views ----------
 function renderHome() {
   const f = state.form;
-  state.step = Math.min(3, Math.max(1, Number(state.step) || 1));
+  hideUserPage();
+  if (isDealer()) return renderDealerHome();
+  state.step = Math.min(4, Math.max(1, Number(state.step) || 1));
   showSheet(false);
 
   paintMarkers([]);
@@ -627,6 +725,22 @@ function header(req, glyph, bg) {
   </div>`;
 }
 
+// The buyer's rate: budget per km, floored at the fair Rs 30/km. Dealers are Accept/Counter
+// against this rate - each of them quotes their own price/km x their distance.
+function yourRateRs(req) {
+  const fair = Number(String((state.config && state.config.bidPerKmLabel) || 'Rs 30').replace(/[^0-9.]/g, '')) || 30;
+  const rate = req.bidMinor / 100 / (req.radiusKm || 1);
+  return Math.max(rate, fair);
+}
+const fmtRate = (v) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+
+// Price warning: a dealer asking more than the budget, even though he may sit well inside it.
+function overWarn(req, r) {
+  const over = r.amountMinor - req.bidMinor;
+  if (over <= 0) return '';
+  return `<div class="overwarn">⚠ ${fmt(over)} over your ${fmt(req.bidMinor)} budget · ${r.dealer.distanceKm} km of your ${req.radiusKm} km range</div>`;
+}
+
 function renderWaiting(req) {
   const cards = req.responses.map((r, i) => {
     const tag = r.kind === 'accept' ? 'Accept' : 'Counter';
@@ -634,8 +748,9 @@ function renderWaiting(req) {
     return `<div class="dealer" data-profile="${r.id}" role="button" tabindex="0" style="animation-delay:${i * 0.12}s">
       <div class="av">${d.photo ? `<img src="${d.photo}" alt="">` : esc(d.name[0])}</div>
       <div class="info"><b>${esc(d.name)}</b>
-        <div class="meta">${d.rating}★ · ${d.jobs} jobs · ${d.distanceKm} km away</div>
+        <div class="meta">${d.rating}★ · ${d.jobs} jobs · ${d.distanceKm} km away · Rs ${d.ratePerKm}/km</div>
         <div class="note">"${esc(r.note)}"</div>
+        ${overWarn(req, r)}
         <div class="peek">Reviews &amp; responses →</div>
       </div>
       <div class="price"><b>${fmt(r.amountMinor)}</b><span class="tag ${r.kind}">${tag}</span>
@@ -647,7 +762,7 @@ function renderWaiting(req) {
     ${header(req, '📡', '#e8f1fe')}
     <div class="waittop"><div class="radar"></div><div>
       <b>${req.responses.length} dealers available within ${req.radiusKm} km</b>
-      <div class="sub" style="margin:0;font-size:12.5px">Your bid ${fmt(req.bidMinor)} · ${req.check.belowBand ? 'below typical' : 'within typical'}</div>
+      <div class="sub" style="margin:0;font-size:12.5px">Your bid ${fmt(req.bidMinor)} · your rate Rs ${fmtRate(yourRateRs(req))}/km · ${req.check.belowBand ? 'below typical' : 'within typical'} · each dealer sets their own Rs/km</div>
     </div></div>
     ${cards}
     <button class="btn ghost" id="back-home">Change search</button>
@@ -696,7 +811,7 @@ function renderDealerProfile(req, responseId) {
   content().innerHTML = `
     <div class="dpbar">
       <button class="modalback" id="dp-back">← All dealers</button>
-      <span class="dpratepill">${d.rating}★ · ${d.jobs} jobs</span>
+      <span class="dpratepill">${d.rating}★ · ${d.jobs} jobs · Rs ${d.ratePerKm}/km</span>
     </div>
 
     <div class="dphead">
@@ -713,8 +828,9 @@ function renderDealerProfile(req, responseId) {
     </div>
 
     <div class="dpquote">"${esc(r.note)}"
-      <span>Response to your job · ${fmt(r.amountMinor)} ${tag}</span>
+      <span>Response to your job · ${fmt(r.amountMinor)} · Rs ${d.ratePerKm}/km × ${d.distanceKm} km · ${tag}</span>
     </div>
+    ${overWarn(req, r)}
 
     <div class="dpsec"><h3>Reviews</h3><div class="dpsub">What people said</div></div>
     ${reviews}
@@ -762,9 +878,9 @@ function renderSelected(req) {
 
 function renderSecured(req) {
   const steps = [
-    ['Hired', 'Dealer accepted your bid', true],
+    ['Hired', 'Dealer accepted the job', true],
     ['On the way', 'Travelling to the seller', true],
-    ['At seller', 'Verifying seller identity & 3% fee consent', false],
+    ['At seller', 'Verifying seller identity & 0.5% fee consent', false],
     ['Live inspection', 'You watch the item being checked on video', false],
     ['Report', 'Verdict and photos delivered', false],
   ];
@@ -826,13 +942,13 @@ function renderDone(req) {
       <div class="receipt">
         <div class="line"><span class="k">Sale price</span><b>${fmt(m.salePrice)}</b></div>
         <div class="line"><span class="k">Inspection bid</span><b>${fmt(m.bidPaid)}</b></div>
-        <div class="line"><span class="k">Buyer success fee (5%)</span><b>${fmt(m.buyerFee)}</b></div>
+        <div class="line"><span class="k">Buyer success fee (0.5%)</span><b>${fmt(m.buyerFee)}</b></div>
         <div class="line"><span class="k">You paid in total</span><b>${fmt(m.buyerTotal)}</b></div>
         <div class="divider" style="margin:0"></div>
-        <div class="line"><span class="k">Seller success fee (3%)</span><b>${fmt(m.sellerFee)}</b></div>
+        <div class="line"><span class="k">Seller success fee (0.5%)</span><b>${fmt(m.sellerFee)}</b></div>
         <div class="line"><span class="k">Seller receives</span><b>${fmt(m.sellerReceives)}</b></div>
         <div class="divider" style="margin:0"></div>
-        <div class="line"><span class="k">Dealer bonus (2%)</span><b>${fmt(m.dealerBonus)}</b></div>
+        <div class="line"><span class="k">Dealer bonus (0.4%)</span><b>${fmt(m.dealerBonus)}</b></div>
         <div class="line total"><span class="k">Dealer total (bid + bonus)</span><b>${fmt(m.dealerTotal)}</b></div>
       </div>`;
   } else {
@@ -954,16 +1070,19 @@ function wireAuth(view) {
 function enterApp() {
   hideAuth();
   setProfileMenu(state.user);
-  renderHome();
+  if (isProfilePath()) renderProfilePage(); else renderHome();
 }
 
 async function logout() {
   try { await api('/api/auth/logout', { method: 'POST', body: '{}' }); } catch {}
   localStorage.removeItem(TOKEN_KEY);
+  if (isProfilePath()) history.replaceState(null, '', '/');
   state.user = null;
   state.current = null;
   state.form = defaultForm();
   state.step = 1;
+  hideUserPage();
+  setProfileMenu(null);
   clearOrigin();
   paintMarkers([]);
   showAuth('home');
@@ -975,8 +1094,12 @@ function setProfileMenu(user) {
   if (!user) { closeProfileMenu(); el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
   $('#avatar').textContent = ((user.name || '?').trim()[0] || '?').toUpperCase();
-  $('#pm-name').textContent = user.name || '';
-  $('#pm-email').textContent = user.email || '';
+  const a = $('#pm-profile');
+  if (a) a.href = '/user/' + userSlug(user);
+  const sw = $('#pm-switch');
+  if (sw) sw.innerHTML = state.mode === 'dealer'
+    ? '<i>⇄</i> Switch to buyer profile'
+    : '<i>⇄</i> Switch to dealer profile';
 }
 
 function closeProfileMenu() {
@@ -1005,8 +1128,10 @@ function wireProfile() {
     closeProfileMenu();
     const what = b.dataset.pm;
     if (what === 'logout') {
-      if (window.confirm(`Log out ${state.user ? state.user.name : ''}?`)) logout();
-    } else if (what === 'settings') openSettings();
+      if (window.confirm('Log out of Hire a Dealer?')) logout();
+    } else if (what === 'profile') { /* <a href="/user/..."> navigates on its own */ }
+    else if (what === 'switch') toggleMode();
+    else if (what === 'settings') openSettings();
     else if (what === 'docs') openDocs();
   });
 
@@ -1034,15 +1159,327 @@ function wireModal() {
   m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('[data-close]')) closeModal(); });
 }
 
-function openSettings() {
+// ---------- profile page: /user/<username> ----------
+function userSlug(u) {
+  const base = (u && (u.name || u.email)) || 'me';
+  return String(base).toLowerCase().replace(/@.*$/, '').replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'me';
+}
+const isProfilePath = () => /^\/user\//.test(location.pathname);
+const isDealer = () => state.mode === 'dealer';
+const availOn = () => localStorage.getItem('hd_avail') !== 'off';
+
+function toggleMode() {
+  state.mode = isDealer() ? 'buyer' : 'dealer';
+  localStorage.setItem('hd_mode', state.mode);
+  closeProfileMenu();
+  setProfileMenu(state.user);
+  toast(isDealer() ? 'Switched to dealer profile.' : 'Switched to buyer profile.');
+  if (isProfilePath()) { renderProfilePage(); return; }
+  state.current = null;
+  state.step = 1;
+  if (isDealer()) renderDealerHome(); else renderHome();
+}
+
+// Dealer-only preferences (Search radius · Bid rate · Max distance), stored separately from
+// the buyer's Settings radius (hd_radius) so the two profiles never mix.
+function dealerPrefs() {
+  const defRate = Number(String((state.config && state.config.bidPerKmLabel) || 'Rs 30').replace(/[^0-9.]/g, '')) || 30;
+  const defMax = Number((state.config && state.config.maxRadiusKm) || 50) || 50;
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem('hd_dealer_prefs') || '{}') || {}; } catch (e) { s = {}; }
+  const maxKm = Math.min(100, Math.max(1, Number(s.maxKm) || defMax));
+  const bidRate = Math.min(500, Math.max(1, Number(s.bidRate) || defRate));
+  const radiusKm = Math.min(maxKm, Math.max(1, Number(s.radiusKm) || 15));
+  return { radiusKm, bidRate, maxKm };
+}
+function saveDealerPrefs(p) { localStorage.setItem('hd_dealer_prefs', JSON.stringify(p)); }
+
+// Dealer mode bar: availability, job counts and the way back to the buyer profile.
+function renderDealerBar() {
+  const tb = $('#topbar');
+  if (!tb) return;
+  tb.classList.remove('hidden');
+  const jobs = (state.list || []).length;
+  const prefs = dealerPrefs();
+  tb.innerHTML = `
+    <div class="dhbar">
+      <div class="dhrow">
+        <span class="dhpill">Dealer mode</span>
+        <button type="button" class="dhswap" id="dh-switch">⇄ Switch to buyer</button>
+      </div>
+      <div class="dhavail ${availOn() ? 'on' : ''}">
+        <div class="dhtxt">
+          <b>${availOn() ? 'Available for jobs' : 'Not available'}</b>
+          <span>${availOn() ? 'Buyers can see you for inspections in this radius' : 'Hidden from new inspection requests'}</span>
+        </div>
+        <button type="button" class="dhtoggle ${availOn() ? 'on' : ''}" id="dh-avail"
+                role="switch" aria-checked="${availOn()}" aria-label="Availability"><i></i></button>
+      </div>
+      <div class="dhstats">
+        <div><span class="k">Open jobs</span><b>${jobs}</b></div>
+        <div><span class="k">Search radius</span><b>${prefs.radiusKm} km</b></div>
+        <div><span class="k">Bid rate</span><b>Rs ${prefs.bidRate}/km</b></div>
+      </div>
+    </div>`;
+  $('#dh-switch').addEventListener('click', toggleMode);
+  $('#dh-avail').addEventListener('click', () => {
+    const on = !availOn();
+    localStorage.setItem('hd_avail', on ? 'on' : 'off');
+    renderDealerBar();
+    toast(on ? 'You are online for jobs.' : 'You are offline for jobs.');
+  });
+}
+
+function jobCard(r) {
+  const s = STATUS[r.status] || { label: r.status, cls: 'blue' };
+  const when = new Date(r.createdAt).toLocaleString('en-PK',
+    { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const bids = (r.responses || []).length;
+  return `
+    <div class="jobcard">
+      <div class="jobtop">
+        <span class="ref">${esc(r.ref || '')}</span>
+        <span class="badgepill ${s.cls}">${esc(s.label)}</span>
+      </div>
+      <b class="jobtitle">${esc(r.title || '')}</b>
+      <div class="jobmeta">${esc(r.category || '')} · ${esc(r.location || '')} · within ${r.radiusKm} km</div>
+      <div class="jobnums">
+        <span>Asking <b>${fmt(r.askingMinor || 0)}</b></span>
+        <span>Inspection bid <b>${fmt(r.bidMinor || 0)}</b></span>
+        <span>${bids} ${bids === 1 ? 'bid' : 'bids'}</span>
+      </div>
+      <div class="jobwhen">Posted ${esc(when)}</div>
+    </div>`;
+}
+
+function renderDealerHome() {
+  renderTopbar();
+  paintMarkers([]);
+  if (hasLocation()) { setOrigin(state.form.lng, state.form.lat); flyTo([state.form.lng, state.form.lat], 12); }
+  else { clearOrigin(); worldView(); }
+
+  const jobs = state.list || [];
+  content().innerHTML = `
+    <div class="dhfeed">
+      <div class="dhfeedhead">
+        <h2>Open jobs</h2>
+        <span>${jobs.length} request${jobs.length === 1 ? '' : 's'} in your radius</span>
+      </div>
+      ${jobs.length
+        ? jobs.map(jobCard).join('')
+        : '<p class="dhempty">No open jobs yet. Keep availability on and new buyer requests will appear here.</p>'}
+      <p class="dhnote">Demo feed shared with the buyer side of this app. Bidding, counters and inspections run in the agent app.</p>
+    </div>`;
+}
+
+function upStatsHtml() {
+  const list = Array.isArray(state.list) ? state.list : [];
+  const completed = list.filter((r) => r.status === 'completed').length;
+  const failed = list.filter((r) => r.status === 'failed').length;
+  const active = list.length - completed - failed;
+  if (isDealer()) {
+    return `
+      <div class="upstat"><span class="k">Requests Received</span><b>${list.length}</b><span class="s">Buyer requests you can take</span></div>
+      <div class="upstat"><span class="k">Completed Deals</span><b>${active}</b><span class="s">Deals you have taken</span></div>
+      <div class="upstat"><span class="k">Unfinished Deals</span><b>${completed}</b><span class="s">Deals that did not close</span></div>`;
+  }
+  return `
+    <div class="upstat"><span class="k">Requests posted</span><b>${list.length}</b><span class="s">Inspections you have asked for</span></div>
+    <div class="upstat"><span class="k">In progress</span><b>${active}</b><span class="s">Finding or with a dealer</span></div>
+    <div class="upstat"><span class="k">Completed</span><b>${completed}</b><span class="s">${failed ? `${failed} not completed` : 'Finished jobs'}</span></div>`;
+}
+
+async function copyProfileLink() {
+  const url = location.href;
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch {}
+    ta.remove();
+  }
+  toast('Profile link copied.');
+}
+
+function renderProfilePage() {
   const u = state.user || {};
+  const slug = userSlug(u);
+  const since = u.createdAt
+    ? new Date(u.createdAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '';
+  const initial = ((u.name || '?').trim()[0] || '?').toUpperCase();
+  const prefs = dealerPrefs();
+  const list = Array.isArray(state.list) ? state.list : [];
+
+  renderTopbar(true);
+  showSheet(false);
+  const profileBtn = $('#profile');
+  if (profileBtn) profileBtn.classList.add('hidden');
+
+  const page = $('#userpage');
+  page.innerHTML = `
+    <div class="uphead">
+      <button id="up-back">← Home</button>
+      <b>Profile</b>
+      <span class="url">/user/${esc(slug)}</span>
+      <button class="copybtn" id="up-copy">Copy link</button>
+    </div>
+
+    <div class="upbody"><div class="upwrap">
+
+      <div class="uphero">
+        <div class="upav">${esc(initial)}</div>
+        <div class="upid">
+          <h1>${esc(u.name || '')}</h1>
+          <div class="upmail">${esc(u.email || '')}</div>
+          <div class="dpstats">
+            <span>${isDealer() ? 'Dealer account' : 'Buyer account'}</span>
+            <span>/user/${esc(slug)}</span>
+            ${since ? `<span>Member since ${esc(since)}</span>` : ''}
+          </div>
+        </div>
+        <div class="upheroact">
+          <button class="btn ghost" id="up-copy2">Copy profile link</button>
+        </div>
+      </div>
+
+      <div class="upstats" id="up-stats">${upStatsHtml()}</div>
+
+      <div class="upgrid">
+
+        <section class="upcard">
+          <div class="upcardhead"><h3>Account details</h3><span>What appears on your Hire a Dealer account</span></div>
+          <div class="uprows">
+            <div class="uprow"><span class="k">Full name</span><b class="v">${esc(u.name || '')}</b></div>
+            <div class="uprow"><span class="k">Email</span><b class="v">${esc(u.email || '')}</b></div>
+            <div class="uprow"><span class="k">Username</span><b class="v">${esc(slug)}</b></div>
+            <div class="uprow"><span class="k">Profile link</span><b class="v">/user/${esc(slug)}</b></div>
+            <div class="uprow"><span class="k">Member since</span><b class="v">${esc(since || '—')}</b></div>
+            <div class="uprow"><span class="k">Role</span><b class="v">${isDealer() ? 'Dealer' : 'Buyer'}</b></div>
+          </div>
+        </section>
+
+        <section class="upcard">
+          <div class="upcardhead"><h3>Inspections</h3><span>Your hiring activity on this account</span></div>
+          ${list.length ? `
+            <div class="uprows">
+              <div class="uprow"><span class="k">Requests posted</span><b class="v">${list.length}</b></div>
+              <div class="uprow"><span class="k">In progress</span><b class="v">${list.filter((r) => r.status !== 'completed' && r.status !== 'failed').length}</b></div>
+              <div class="uprow"><span class="k">Completed</span><b class="v">${list.filter((r) => r.status === 'completed').length}</b></div>
+            </div>` : `
+            <p class="upempty">No inspections yet. Post a request and verified dealers nearby will send you bids within minutes.</p>`}
+          <div style="height:16px"></div>
+          <div class="upactions"><button class="btn primary" id="up-post">Post an inspection</button></div>
+        </section>
+
+        ${isDealer() ? `
+        <section class="upcard">
+          <div class="upcardhead"><h3>Preferences</h3><span>Defaults used when you post a request</span></div>
+          <div class="uprows">
+            <div class="uprow"><span class="k">Search radius</span><b class="v">${prefs.radiusKm} km</b></div>
+            <div class="uprow"><span class="k">Bid rate</span><b class="v">Rs ${prefs.bidRate}/km</b></div>
+            <div class="uprow"><span class="k">Max distance</span><b class="v">${prefs.maxKm} km</b></div>
+          </div>
+          <div style="height:16px"></div>
+          <div class="upactions"><button class="btn ghost" id="up-prefs">Edit preferences</button></div>
+        </section>` : ''}
+
+        <section class="upcard">
+          <div class="upcardhead"><h3>Profile mode</h3><span>One account, two ways to use Hire a Dealer</span></div>
+          <p class="upnote">${isDealer()
+            ? 'You are on the dealer profile: availability, open jobs and dealer tools. Switch back to post inspections as a buyer.'
+            : 'You are on the buyer profile: post inspections, set a bid and pick a dealer. Switch to the dealer profile to take jobs.'}</p>
+          <div class="upactions">
+            <button class="btn ${isDealer() ? 'ghost' : 'primary'}" id="up-switch">${isDealer() ? 'Switch to buyer profile' : 'Switch to dealer profile'}</button>
+          </div>
+        </section>
+
+        <section class="upcard">
+          <div class="upcardhead"><h3>Session</h3><span>Signed in on this device</span></div>
+          <p class="upnote">Logging out ends your session on this device. Your requests, bids and profile stay with your account.</p>
+          <div class="upactions"><button class="btn ghost" id="up-logout" style="color:#b91c1c">Log out</button></div>
+        </section>
+
+      </div>
+    </div></div>`;
+
+  page.classList.remove('hidden');
+  $('#up-back').addEventListener('click', goHome);
+  $('#up-post').addEventListener('click', goHome);
+  const prefsBtn = $('#up-prefs');
+  if (prefsBtn) prefsBtn.addEventListener('click', openPreferences);
+  $('#up-logout').addEventListener('click', () => { if (window.confirm('Log out of Hire a Dealer?')) logout(); });
+  $('#up-copy').addEventListener('click', copyProfileLink);
+  $('#up-copy2').addEventListener('click', copyProfileLink);
+  $('#up-switch').addEventListener('click', toggleMode);
+
+  refreshList().catch(() => {}).then(() => {
+    const s = $('#up-stats');
+    if (s && !$('#userpage').classList.contains('hidden')) s.innerHTML = upStatsHtml();
+  });
+}
+
+function hideUserPage() {
+  const page = $('#userpage');
+  if (page) page.classList.add('hidden');
+  if (state.user) setProfileMenu(state.user);
+}
+
+// Dealer-only preferences editor: Search radius, Bid rate and Max distance are all editable
+// and saved to hd_dealer_prefs — the buyer's hd_radius / Settings are never touched.
+function openPreferences() {
+  const p = dealerPrefs();
+  const style = 'width:100%;accent-color:var(--green)';
+  modal(`
+    <div class="modalhead"><h2>Preferences</h2><button class="modalx" data-close aria-label="Close">✕</button></div>
+    <div class="field"><label class="budgetlabel">Search radius <span class="cnt" id="pref-radius-v">${p.radiusKm} km</span></label>
+      <input type="range" id="pref-radius" min="1" max="${p.maxKm}" step="1" value="${p.radiusKm}" style="${style}"></div>
+    <div class="field"><label class="budgetlabel">Bid rate <span class="cnt" id="pref-rate-v">Rs ${p.bidRate}/km</span></label>
+      <input type="range" id="pref-rate" min="1" max="500" step="1" value="${p.bidRate}" style="${style}"></div>
+    <div class="field"><label class="budgetlabel">Max distance <span class="cnt" id="pref-max-v">${p.maxKm} km</span></label>
+      <input type="range" id="pref-max" min="1" max="100" step="1" value="${p.maxKm}" style="${style}"></div>
+    <p class="upnote">These defaults apply to your dealer profile only — they never change the buyer search radius in Settings.</p>
+    <button class="btn primary" id="pref-save">Save preferences</button>
+    <button class="btn ghost" data-close>Cancel</button>`);
+
+  const r = $('#pref-radius');
+  const rate = $('#pref-rate');
+  const max = $('#pref-max');
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+  r.addEventListener('input', () => { $('#pref-radius-v').textContent = `${r.value} km`; });
+  rate.addEventListener('input', () => { $('#pref-rate-v').textContent = `Rs ${rate.value}/km`; });
+  max.addEventListener('input', () => {
+    $('#pref-max-v').textContent = `${max.value} km`;
+    r.max = String(max.value); // the search radius can never exceed the max distance
+    if (Number(r.value) > Number(max.value)) {
+      r.value = max.value;
+      $('#pref-radius-v').textContent = `${r.value} km`;
+    }
+  });
+
+  $('#pref-save').addEventListener('click', () => {
+    const next = {
+      radiusKm: clamp(Number(r.value) || p.radiusKm, 1, Number(max.value) || p.maxKm),
+      bidRate: clamp(Number(rate.value) || p.bidRate, 1, 500),
+      maxKm: clamp(Number(max.value) || p.maxKm, 1, 100),
+    };
+    next.radiusKm = Math.min(next.radiusKm, next.maxKm);
+    saveDealerPrefs(next);
+    closeModal();
+    toast(`Preferences saved · ${next.radiusKm} km · Rs ${next.bidRate}/km · ${next.maxKm} km`);
+    if (isProfilePath()) renderProfilePage();
+    else if (isDealer()) renderDealerBar();
+  });
+}
+
+function openSettings() {
   const saved = Math.min(50, Math.max(1, Number(localStorage.getItem('hd_radius')) || 15));
   modal(`
     <div class="modalhead"><h2>Settings</h2><button class="modalx" data-close aria-label="Close">✕</button></div>
-    <div class="settingsacc">
-      <div class="avatar sm">${esc(((u.name || '?').trim()[0] || '?').toUpperCase())}</div>
-      <div class="accinfo"><b>${esc(u.name || '')}</b><span>${esc(u.email || '')}</span></div>
-    </div>
     <div class="field"><label class="budgetlabel">Default search radius <span class="cnt" id="set-radius-v">${saved} km</span></label>
       <input type="range" id="set-radius" min="1" max="50" step="1" value="${saved}" style="width:100%;accent-color:var(--green)"></div>
     <button class="btn ghost" data-close>Close</button>`);
@@ -1129,6 +1566,8 @@ async function act(id, path, body) {
 }
 
 function goHome() {
+  if (isProfilePath()) history.pushState(null, '', '/');
+  hideUserPage();
   state.current = null;
   state.form = defaultForm();
   state.step = 1;
@@ -1143,6 +1582,10 @@ async function onRefresh() {
 
 window.__hd = { state, computeBand, normalBidRupees };
 
+window.addEventListener('popstate', () => {
+  if (!state.user) return;
+  if (isProfilePath()) renderProfilePage(); else renderHome();
+});
 async function boot() {
   wireProfile();
   wireModal();

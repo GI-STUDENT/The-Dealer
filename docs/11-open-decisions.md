@@ -21,7 +21,7 @@ original question text is kept for the reasoning trail only.
 | Q1 How is the inspection fee set? | **The buyer sets the bid**; we show a suggested range and the dealer sees how the bid compares to typical. Platform takes **no cut** — the dealer is paid the bid in full. | `DECISIONS.md` §5 |
 | Q2 Buyer bid vs platform band? | **Buyer bid**, with the band shown as guidance on both sides. At most **1 counter** per chain in MVP. | `DECISIONS.md` §5.3 |
 | Q3 Open bidding between agents? | **No.** Accept / Counter / No only. Revisit if unmatched rate >15% after 1,000 transactions. | `DECISIONS.md` §5.2 |
-| Q4 Minimum and maximum on fees? | Success fees are **flat-rate with a floor and a cap, not banded**: buyer 5% (1.5k–15k), seller 3% (1k–8k), dealer bonus 2% (1k–5k). Tiered success rates were dropped — they made the buyer's closing cost unpredictable. | `DECISIONS.md` §2 |
+| Q4 Minimum and maximum on fees? | **Pure flat rates: no floor, no cap, not banded** — buyer 5%, seller 5%, dealer bonus 4% (= 40% of the 10% fee pool the two sides pay), platform 6% (= 60%). The same split holds at every item price; tiered success rates were dropped — they made the buyer's closing cost unpredictable. | `DECISIONS.md` §2 |
 | Q5 High-value products? | **v1 ceiling is PKR 500,000**, phones/laptops/furniture/appliances only. **No cars, no property** in v1. L2 agents to 300k, L3 to 500k. | `DECISIONS.md` §6, `07` §1.1 |
 
 ### Success-fee economics (was "the 10% commission")
@@ -29,23 +29,24 @@ original question text is kept for the reasoning trail only.
 The original "buyer pays 10%, split 50/50" model is **replaced**.
 
 ```
-BUYER    inspection bid (full amount to dealer)  +  5% success fee  (1.5k – 15k)
-SELLER                                                          3% success fee  (1k – 8k)
-DEALER    full bid  +  2% success bonus        (1k – 5k)
-COMPANY   the remainder  →  6% of sale price
+BUYER    inspection bid (full amount to dealer)  +  5% of price
+SELLER                                          5% of price  (collected on the spot)
+DEALER    full bid  +  4% of price              (= 40% of the 10% fee pool)
+COMPANY   the remainder  →  6% of sale price    (= 60% of the pool)
 ```
 
 Three reasons the numbers moved (`DECISIONS.md` §2.1–2.4):
 1. A **flat 3% dealer cut is misaligned with effort** — identical 2.5 hours of work pays Rs 450
-   on a Rs 15,000 item and Rs 15,000 on a Rs 500,000 one. The 2% bonus with a Rs 5,000 cap
-   fixes it and lands the dealer at the *same* Rs 4,500 on a typical Rs 150,000 phone.
+   on a Rs 15,000 item and Rs 15,000 on a Rs 500,000 one. A pure 4% of price fixes it and its
+   shape never changes: Rs 6,000 on a Rs 150,000 phone, Rs 400 on a Rs 10,000 item — always
+   40% of whatever the 10% fee pool is.
 2. **The company nets 4.4% instead of 3.1%** after provider fees, ops, and the fraud reserve —
    because only fees, not the sale amount, pass through the platform.
-3. **Seller fee 5% → 3%.** A seller who refuses the fee kills the deal for everyone. A lower fee
-   that gets accepted beats a higher one that does not.
+3. **Seller fee 5%, buyer fee 5%.** Matching both sides keeps the arithmetic the buyer sees
+   honest: 5% + 5% − 4% = the 6% the platform keeps.
 
-**Standing constraint: success fees exist only when money moves.** No sale, no 5%, no 3%, no
-2% bonus. This is structurally enforced in `06` §3.2 and by a database trigger.
+**Standing constraint: success fees exist only when money moves.** No sale, no 5%, no 5%, no
+4% bonus. This is structurally enforced in `06` §3.2 and by a database trigger.
 
 ---
 
@@ -380,7 +381,7 @@ These are the assumptions I made so the spec is implementable. Push back on any 
 |---|---|---|
 | A1 | Purchase money never touches the platform in MVP | If you want escrow, Q10 → Option B, and add 3–4 months and a PSP dependency |
 | A2 | Inspection bid, not commission, is the agent's main income | If commission is meant to dominate, the economics do not work at mid-tickets (`00` §3) |
-| A3 | ~~Commission is 50/50~~ **SUPERSEDED** - replaced by the flat-rate two-sided model in `DECISIONS.md` section 2 | Success fees exist only on a closed deal, and the dealer's bonus is capped at Rs 5,000 |
+| A3 | ~~Commission is 50/50~~ **SUPERSEDED** - replaced by the flat-rate two-sided model in `DECISIONS.md` section 2 | Success fees exist only on a closed deal, and the dealer's bonus is 4% of price (40% of the fee pool) |
 | A4 | English-first UI | If Urdu-first is required, budget an extra 3–4 weeks and re-test the agent app |
 | A5 | One city, phones + laptops | If national from day one, expect a 12-month liquidity problem (`09` §10) |
 | A6 | Flutter, Android-first | If iOS buyers matter commercially, add an RN or Flutter iOS build in V1 |

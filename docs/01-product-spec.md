@@ -352,7 +352,7 @@ Do not build these. Building them is the main way this project dies.
 | Installment/BNPL for the purchase price | Requires licensing and credit risk. |
 | Vehicle title transfer / vehicle registration support | Legal complexity. Inspect and report only. `[LEGAL REVIEW]` |
 | Native iOS-first design | Pakistan is Android-dominant. One Flutter codebase. |
-| Seller accounts and seller-side apps | Rejected: the agent's phone is the seller-facing interface. The seller's 3% fee is collected on-site via a payment link on the agent's device — the seller still never installs or registers for anything (`DECISIONS.md` §4). |
+| Seller accounts and seller-side apps | Rejected: the agent's phone is the seller-facing interface. The seller's 5% fee is collected on-site via a payment link on the agent's device — the seller still never installs or registers for anything (`DECISIONS.md` §4). |
 | The buyer raising a bid to hire an inspector | **IN — this is the core interaction.** The buyer posts a bid with amount, location, and a checklist of what to inspect; the dealer feed shows amount, distance, typical range, and the check list; the dealer accepts, counters once, or declines; on accept the buyer pays the bid in-app and the dealer sees a paid job (`DECISIONS.md` §5). |
 | Cars and property | Out of v1. Registration transfer and tenancy agreements need a different product and a lawyer-reviewed flow. Cars in v2 (`DECISIONS.md` §6). |
 | Insurance products | V2+, requires a licensed partner. |
