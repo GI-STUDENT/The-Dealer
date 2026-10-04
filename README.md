@@ -19,8 +19,6 @@ Post a bid, compare dealers by distance and their own Rs/km rate, and close the 
 
 ---
 
-# Hire a Dealer
-
 **Can't visit the seller? Hire someone there to check it for you.**
 
 Pakistan-first service where a buyer **posts a bid to hire a verified Field Agent** to physically
