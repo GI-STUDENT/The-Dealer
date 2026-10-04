@@ -17,6 +17,8 @@ Post a bid, compare dealers by distance and their own Rs/km rate, and close the 
 
 </div>
 
+---
+
 # Hire a Dealer
 
 **Can't visit the seller? Hire someone there to check it for you.**
