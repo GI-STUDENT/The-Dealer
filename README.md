@@ -1,3 +1,21 @@
+<div align="center">
+
+# 🚀 Hire a Dealer
+
+
+### **Hire a verified Field Agent to inspect any used item before you buy**
+
+
+Post a bid, compare dealers by distance and their own Rs/km rate, and close the deal with an evidence-backed inspection report — without ever visiting the seller.
+
+
+![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522.6-brightgreen?logo=nodedotjs)
+![Platform](https://img.shields.io/badge/Platform-Web-blue)
+![Dependencies](https://img.shields.io/badge/Dependencies-0-green)
+![Status](https://img.shields.io/badge/Status-Active-success)
+![Feature](https://img.shields.io/badge/Feature-Field%20Agents-orange)
+
+
 # Hire a Dealer
 
 **Can't visit the seller? Hire someone there to check it for you.**
