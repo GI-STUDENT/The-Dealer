@@ -34,6 +34,10 @@ accounts, no delivery app. Just buyer-side physical representation.
 3. Your browser opens **http://localhost:3000** automatically. Set `$env:NO_OPEN = 1`
    (PowerShell) first if you do not want that.
 
+   <img width="1278" height="637" alt="Screenshot 2026-10-06 135108" src="https://github.com/user-attachments/assets/f188f81d-6f72-45aa-9ba8-c45eb67e8276" />
+<img width="1278" height="633" alt="Capture" src="https://github.com/user-attachments/assets/9f2b73de-d7b3-4568-a672-9b7a71fbd34c" />
+
+
 The demo is local: requests, responses and accounts are in-memory (accounts also persist to
 `data/accounts.json`), so a server restart clears the jobs. Map tiles load from OpenFreeMap —
 everything else works offline.
